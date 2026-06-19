@@ -1,3 +1,12 @@
+export type TransactionType =
+  | "purchase"
+  | "sale"
+  | "sale-purchase"
+  | "remortgage"
+  | "transfer-of-equity";
+
+export type LeaseholdType = "standard" | "high-rise";
+
 export type FeeBand = {
   min: number;
   max: number | null;
@@ -5,7 +14,6 @@ export type FeeBand = {
   percentOfValue?: number;
 };
 
-// Mirrors the bands shown on the Price Transparency page.
 export const purchaseFeeBands: FeeBand[] = [
   { min: 0, max: 150000, fee: 750 },
   { min: 150001, max: 300000, fee: 850 },
@@ -24,24 +32,18 @@ export const saleFeeBands: FeeBand[] = [
   { min: 1000000, max: null, fee: null, percentOfValue: 0.0015 },
 ];
 
-// NOTE: the live site does not publish a remortgage fee scale — this is a
-// placeholder structure (base fee + mortgage admin disbursement) that should
-// be confirmed and replaced with the firm's actual remortgage rate card.
 export const remortgageBaseFee = 450;
 export const remortgageAdminFee = 100;
-
-export const leaseholdSupplement = 300;
+export const transferOfEquityBaseFee = 500;
+export const leaseholdStandardFee = 300;
+export const leaseholdHighRiseFee = 350;
 export const bankTransferFee = 36;
-
-export type TransactionType = "purchase" | "sale" | "remortgage";
 
 function feeFromBands(value: number, bands: FeeBand[]): number {
   const band =
     bands.find((b) => value >= b.min && (b.max === null || value <= b.max)) ??
     bands[bands.length - 1];
-  if (band.percentOfValue) {
-    return Math.round(value * band.percentOfValue);
-  }
+  if (band.percentOfValue) return Math.round(value * band.percentOfValue);
   return band.fee ?? 0;
 }
 
@@ -55,25 +57,38 @@ export type QuoteBreakdown = {
 export function calculateQuote(
   type: TransactionType,
   value: number,
-  isLeasehold: boolean
+  isLeasehold: boolean,
+  leaseholdType: LeaseholdType = "standard"
 ): QuoteBreakdown {
   let legalFee = 0;
   let disbursementsEstimate = bankTransferFee;
 
   if (type === "purchase") {
     legalFee = feeFromBands(value, purchaseFeeBands);
-    disbursementsEstimate += 30 + 3 + 6 + 250 + 3; // ID + HMLR + office copies + search pack + OS1
+    disbursementsEstimate += 30 + 3 + 6 + 250 + 3;
   } else if (type === "sale") {
     legalFee = feeFromBands(value, saleFeeBands);
-    disbursementsEstimate += 30 + 6; // ID + office copies
-  } else {
+    disbursementsEstimate += 30 + 6;
+  } else if (type === "sale-purchase") {
+    legalFee =
+      feeFromBands(value, saleFeeBands) +
+      feeFromBands(value, purchaseFeeBands);
+    disbursementsEstimate += 30 + 3 + 6 + 250 + 3 + 6;
+  } else if (type === "remortgage") {
     legalFee = remortgageBaseFee;
     disbursementsEstimate += remortgageAdminFee;
+  } else if (type === "transfer-of-equity") {
+    legalFee = transferOfEquityBaseFee;
+    disbursementsEstimate += 30 + 6;
   }
 
-  const leaseholdFee = isLeasehold ? leaseholdSupplement : 0;
-  const total = legalFee + leaseholdFee + disbursementsEstimate;
+  let leaseholdFee = 0;
+  if (isLeasehold) {
+    leaseholdFee =
+      leaseholdType === "high-rise" ? leaseholdHighRiseFee : leaseholdStandardFee;
+  }
 
+  const total = legalFee + leaseholdFee + disbursementsEstimate;
   return { legalFee, leaseholdFee, disbursementsEstimate, total };
 }
 

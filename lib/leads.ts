@@ -3,15 +3,38 @@ import { getDb } from "./mongodb";
 
 export type LeadStatus = "new" | "contacted" | "quoted" | "instructed" | "completed";
 
+export type PropertySection = {
+  transactionAddress: string;
+  addressUnknown: boolean;
+  propertyValue: number | null;
+  isLeasehold: boolean;
+  leaseholdType: "standard" | "high-rise" | null;
+  peopleInvolved: number;
+  additionalOptions: string[];
+};
+
 export type Lead = {
   _id: ObjectId;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  transactionType: "purchase" | "sale" | "remortgage";
+  transactionType: "purchase" | "sale" | "sale-purchase" | "remortgage" | "transfer-of-equity";
+  // For sale, remortgage, transfer-of-equity, single-type transactions
+  transactionAddress: string;
+  addressUnknown: boolean;
   propertyValue: number | null;
   isLeasehold: boolean;
+  leaseholdType: "standard" | "high-rise" | null;
+  peopleInvolved: number;
+  hasMortgage: boolean | null;
+  remortgageValue: number | null;
+  peopleBeingAdded: number | null;
+  peopleBeingRemoved: number | null;
+  additionalOptions: string[];
+  // Sale & Purchase separate sections
+  saleSection: PropertySection | null;
+  purchaseSection: PropertySection | null;
   message: string;
   estimate: {
     legalFee: number;
@@ -32,11 +55,7 @@ async function getLeadsCollection(): Promise<Collection<Lead>> {
 
 export async function createLead(input: LeadInput): Promise<Lead> {
   const collection = await getLeadsCollection();
-  const doc = {
-    ...input,
-    status: "new" as LeadStatus,
-    createdAt: new Date(),
-  };
+  const doc = { ...input, status: "new" as LeadStatus, createdAt: new Date() };
   const result = await collection.insertOne(doc as Lead);
   return { ...doc, _id: result.insertedId };
 }
@@ -56,45 +75,23 @@ export async function listLeads(filters: LeadFilters = {}) {
   const { search, transactionType, status, dateFrom, dateTo } = filters;
   const page = Math.max(filters.page ?? 1, 1);
   const pageSize = filters.pageSize ?? 20;
-
   const query: Record<string, unknown> = {};
 
   if (search) {
     const regex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    query.$or = [
-      { firstName: regex },
-      { lastName: regex },
-      { email: regex },
-      { phone: regex },
-    ];
+    query.$or = [{ firstName: regex }, { lastName: regex }, { email: regex }, { phone: regex }];
   }
-
-  if (transactionType && transactionType !== "all") {
-    query.transactionType = transactionType;
-  }
-
-  if (status && status !== "all") {
-    query.status = status;
-  }
-
+  if (transactionType && transactionType !== "all") query.transactionType = transactionType;
+  if (status && status !== "all") query.status = status;
   if (dateFrom || dateTo) {
     const createdAt: Record<string, Date> = {};
     if (dateFrom) createdAt.$gte = new Date(dateFrom);
-    if (dateTo) {
-      const end = new Date(dateTo);
-      end.setHours(23, 59, 59, 999);
-      createdAt.$lte = end;
-    }
+    if (dateTo) { const end = new Date(dateTo); end.setHours(23, 59, 59, 999); createdAt.$lte = end; }
     query.createdAt = createdAt;
   }
 
   const [leads, total] = await Promise.all([
-    collection
-      .find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .toArray(),
+    collection.find(query).sort({ createdAt: -1 }).skip((page - 1) * pageSize).limit(pageSize).toArray(),
     collection.countDocuments(query),
   ]);
 
