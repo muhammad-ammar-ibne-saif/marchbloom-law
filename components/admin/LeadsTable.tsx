@@ -13,9 +13,11 @@ function formatGBP(amount: number | null): string {
 }
 
 const transactionLabels: Record<Lead["transactionType"], string> = {
-  purchase: "Buying",
-  sale: "Selling",
-  remortgage: "Remortgaging",
+  purchase: "Purchase",
+  sale: "Sale",
+  "sale-purchase": "Sale & Purchase",
+  remortgage: "Remortgage",
+  "transfer-of-equity": "Transfer of Equity",
 };
 
 export default function LeadsTable({ leads }: { leads: Lead[] }) {
@@ -67,7 +69,9 @@ export default function LeadsTable({ leads }: { leads: Lead[] }) {
               <td className="whitespace-nowrap px-5 py-3.5 text-ink-700">
                 {transactionLabels[lead.transactionType]}
                 {lead.isLeasehold && (
-                  <span className="ml-1.5 text-xs text-ink-400">(Leasehold)</span>
+                  <span className="ml-1.5 text-xs text-ink-400">
+                    (Leasehold)
+                  </span>
                 )}
               </td>
               <td className="whitespace-nowrap px-5 py-3.5 text-ink-700">
