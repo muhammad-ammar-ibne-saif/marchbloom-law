@@ -8,6 +8,7 @@ import {
   navLinks,
   siteConfig,
 } from "@/lib/data";
+import AccreditationBadges from "./AccreditationBadges";
 
 export default function Footer() {
   return (
@@ -19,15 +20,22 @@ export default function Footer() {
             <span className="font-display text-lg">March &amp; Bloom</span>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-bone-200/70">
-            A London property law practice handling residential, commercial,
-            and landlord &amp; tenant matters — with one solicitor on your
-            file from start to finish.
+            A London property law practice handling residential, commercial, and
+            landlord &amp; tenant matters — with one solicitor on your file from
+            start to finish.
           </p>
           <div className="mt-6 space-y-2.5 text-sm text-bone-200/80">
-            <a href={`tel:${siteConfig.phoneLandline.replace(/\s/g, "")}`} className="flex items-center gap-2 hover:text-bone-50">
-              <Phone size={15} className="text-brass-400" /> {siteConfig.phoneLandline}
+            <a
+              href={`tel:${siteConfig.phoneLandline.replace(/\s/g, "")}`}
+              className="flex items-center gap-2 hover:text-bone-50"
+            >
+              <Phone size={15} className="text-brass-400" />{" "}
+              {siteConfig.phoneLandline}
             </a>
-            <a href={`mailto:${siteConfig.email}`} className="flex items-center gap-2 hover:text-bone-50">
+            <a
+              href={`mailto:${siteConfig.email}`}
+              className="flex items-center gap-2 hover:text-bone-50"
+            >
               <Mail size={15} className="text-brass-400" /> {siteConfig.email}
             </a>
             <div className="flex items-start gap-2">
@@ -44,7 +52,10 @@ export default function Footer() {
           <ul className="mt-5 space-y-2.5 text-sm text-bone-200/70">
             {navLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="transition-colors hover:text-bone-50">
+                <Link
+                  href={link.href}
+                  className="transition-colors hover:text-bone-50"
+                >
                   {link.label}
                 </Link>
               </li>
@@ -59,7 +70,10 @@ export default function Footer() {
           <ul className="mt-5 space-y-2.5 text-sm text-bone-200/70">
             {footerServiceLinks.map((link) => (
               <li key={link.label}>
-                <Link href={link.href} className="transition-colors hover:text-bone-50">
+                <Link
+                  href={link.href}
+                  className="transition-colors hover:text-bone-50"
+                >
                   {link.label}
                 </Link>
               </li>
@@ -74,7 +88,10 @@ export default function Footer() {
           <ul className="mt-5 space-y-2.5 text-sm text-bone-200/70">
             {footerUsageLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="transition-colors hover:text-bone-50">
+                <Link
+                  href={link.href}
+                  className="transition-colors hover:text-bone-50"
+                >
                   {link.label}
                 </Link>
               </li>
@@ -84,16 +101,19 @@ export default function Footer() {
       </Container>
 
       <div className="border-t border-bone-50/10">
-        <Container className="flex flex-col gap-2 py-6 text-xs leading-relaxed text-bone-200/55 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {new Date().getFullYear()} March and Bloom Law is a trading
-            name of March and Bloom Law Limited, registered in England &amp;
-            Wales (company no. {siteConfig.companyNumber}).
-          </p>
-          <p>
-            Authorised and regulated by the SRA, registration no.{" "}
-            {siteConfig.sraNumber}.
-          </p>
+        <Container className="flex flex-col gap-6 py-8 sm:flex-row sm:items-center sm:justify-between">
+          <AccreditationBadges />
+          <div className="flex flex-col gap-2 text-xs leading-relaxed text-bone-200/55">
+            <p>
+              © {new Date().getFullYear()} March and Bloom Law is a trading name
+              of March and Bloom Law Limited, registered in England &amp; Wales
+              (company no. {siteConfig.companyNumber}).
+            </p>
+            <p>
+              Authorised and regulated by the SRA, registration no.{" "}
+              {siteConfig.sraNumber}.
+            </p>
+          </div>
         </Container>
       </div>
     </footer>

@@ -16,12 +16,12 @@ export default function Header() {
       <Container className="flex h-20 items-center justify-between">
         <Link
           href="/"
-          className="flex items-center gap-2.5 text-ink-900 transition-opacity hover:opacity-80"
+          className="flex items-center gap-3 text-ink-900 transition-opacity hover:opacity-80"
         >
-          <BloomMark className="h-8 w-8 text-ink-700" />
-          <span className="font-display text-lg leading-tight">
+          <BloomMark className="h-11 w-11 text-ink-700" />
+          <span className="font-display text-2xl leading-tight">
             March <span className="text-brass-600">&amp;</span> Bloom
-            <span className="block text-[11px] font-body font-medium uppercase tracking-[0.18em] text-ink-500 flex justify-center">
+            <span className="block text-[12px] font-body font-medium uppercase tracking-[0.18em] text-ink-500 flex justify-center">
               Law
             </span>
           </span>

@@ -15,7 +15,7 @@ export const navLinks = [
   { label: "About", href: "/about-us" },
   { label: "Services", href: "/our-services" },
   { label: "Pricing", href: "/price-transparency" },
-  { label: "Contact", href: "/book-a-consultation" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export const footerServiceLinks = [
@@ -190,6 +190,6 @@ export const saleDisbursements: PriceRow[] = [
 export const team = [
   { name: "Kiran Odedra", role: "Partner & Principal Solicitor", rate: "£300/hr", experience: "11 years PQE", location: "Office-based" },
   { name: "Dilshad Begum", role: "Solicitor", rate: "£300/hr", experience: "8 years PQE", location: "Remote" },
-  { name: "Anita Chodha", role: "Solicitor", rate: "£200/hr", experience: "7 years PQE", location: "Remote" },
+  { name: "Emma Jarrett", role: "Conveyancer", rate: "£300/hr", experience: "20 years conveyancing experience", location: "Office-based" },
   { name: "Safwaan Al-Khayr", role: "Solicitor", rate: "£160/hr", experience: "1 year PQE", location: "Remote" },
 ];

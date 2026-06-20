@@ -8,11 +8,43 @@ const fieldClasses =
   "w-full rounded-lg border border-ink-900/15 bg-bone-50 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-400 transition-colors focus:border-brass-500 focus:outline-none";
 
 export default function ContactForm() {
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSubmitted(true);
+    setError(null);
+    setSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const payload = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+      subject: formData.get("subject") || "",
+      message: formData.get("message"),
+      honeypot: formData.get("company"),
+    };
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Something went wrong — please try again.");
+        setSubmitting(false);
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setError("Couldn't reach the server — please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -35,52 +67,92 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="firstName" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
-            First name
-          </label>
-          <input id="firstName" name="firstName" required className={fieldClasses} />
-        </div>
-        <div>
-          <label htmlFor="lastName" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
-            Last name
-          </label>
-          <input id="lastName" name="lastName" required className={fieldClasses} />
-        </div>
+      <input
+        type="text"
+        name="company"
+        tabIndex={-1}
+        autoComplete="off"
+        className="absolute h-0 w-0 opacity-0"
+        aria-hidden="true"
+      />
+      <div>
+        <label
+          htmlFor="name"
+          className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600"
+        >
+          Name
+        </label>
+        <input id="name" name="name" required className={fieldClasses} />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="phone" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
-            Phone
-          </label>
-          <input id="phone" name="phone" type="tel" required className={fieldClasses} />
-        </div>
-        <div>
-          <label htmlFor="email" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
+          <label
+            htmlFor="email"
+            className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600"
+          >
             Email
           </label>
-          <input id="email" name="email" type="email" required className={fieldClasses} />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            className={fieldClasses}
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="phone"
+            className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600"
+          >
+            Phone
+          </label>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            required
+            className={fieldClasses}
+          />
         </div>
       </div>
       <div>
-        <label htmlFor="message" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
-          How can we help?
+        <label
+          htmlFor="subject"
+          className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600"
+        >
+          Subject <span className="normal-case text-ink-400">(optional)</span>
         </label>
-        <textarea id="message" name="message" rows={4} required className={fieldClasses} />
+        <input id="subject" name="subject" className={fieldClasses} />
+      </div>
+      <div>
+        <label
+          htmlFor="message"
+          className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600"
+        >
+          Message
+        </label>
+        <textarea
+          id="message"
+          name="message"
+          rows={5}
+          required
+          className={fieldClasses}
+        />
       </div>
       <p className="text-xs leading-relaxed text-ink-500">
-        By submitting this form you agree to our handling of your details as
-        set out in our Privacy Policy. We'll only use them to respond to your
-        enquiry.
+        By submitting this form you agree to our handling of your details as set
+        out in our Privacy Policy.
       </p>
+      {error && <p className="text-sm text-clay-500">{error}</p>}
       <motion.button
         whileHover={{ y: -2 }}
         whileTap={{ scale: 0.98 }}
         type="submit"
-        className="w-full rounded-full bg-ink-900 px-6 py-3.5 text-sm font-medium text-bone-50 shadow-soft transition-shadow hover:shadow-lift sm:w-auto"
+        disabled={submitting}
+        className="w-full rounded-full bg-ink-900 px-6 py-3.5 text-sm font-medium text-bone-50 shadow-soft transition-shadow hover:shadow-lift disabled:opacity-60 sm:w-auto"
       >
-        Send enquiry
+        {submitting ? "Sending..." : "Send message"}
       </motion.button>
     </form>
   );
