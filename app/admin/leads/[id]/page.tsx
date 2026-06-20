@@ -274,7 +274,7 @@ export default async function LeadDetailPage({
                 </dd>
               </div>
             )}
-            <div className="flex items-start gap-2.5">
+            <div className="flex items-start gap-2.5 ">
               <KeyRound size={16} className="mt-0.5 shrink-0 text-brass-600" />
               <div>
                 <dt className="text-xs uppercase tracking-wide text-ink-500">
