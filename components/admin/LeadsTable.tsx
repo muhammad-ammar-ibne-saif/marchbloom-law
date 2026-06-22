@@ -80,7 +80,13 @@ export default function LeadsTable({ leads }: { leads: Lead[] }) {
                 {formatGBP(lead.propertyValue)}
               </td>
               <td className="whitespace-nowrap px-5 py-3.5 font-medium text-ink-900">
-                {lead.estimate ? formatGBP(lead.estimate.total) : "—"}
+                {lead.combinedTotal
+  ? formatGBP(lead.combinedTotal)
+  : lead.singleBreakdown
+  ? formatGBP(lead.singleBreakdown.subtotal)
+  : lead.saleBreakdown
+  ? formatGBP(lead.saleBreakdown.subtotal)
+  : "—"}
               </td>
               <td className="whitespace-nowrap px-5 py-3.5">
                 <StatusBadge status={lead.status} />
