@@ -11,98 +11,398 @@ const transactionLabels: Record<string, string> = {
 };
 
 function leaseholdLabel(isLeasehold: boolean, leaseholdType: string | null) {
-  return !isLeasehold
-    ? "Freehold"
-    : leaseholdType === "high-rise"
-    ? "Leasehold — 5+ floors (BSA, £350)"
-    : "Leasehold — under 5 floors (£300)";
+  return !isLeasehold ? "Freehold"
+    : leaseholdType === "high-rise" ? "Leasehold — 5+ floors (BSA)"
+    : "Leasehold — under 5 floors";
 }
 
-function row(label: string, value: string, bold = false): string {
-  return `<tr><td style="padding:6px 12px;color:#5c6b62;font-size:13px;">${label}</td><td style="padding:6px 12px;font-weight:${bold ? 700 : 600};color:#16261f;font-size:13px;">${value}</td></tr>`;
-}
+function breakdownTable(label: string, b: DetailedBreakdown): string {
+  const rows: string[] = [];
 
-function breakdownRows(label: string, b: DetailedBreakdown): string {
-  const lines: string[] = [
-    `<tr><td colspan="2" style="padding:10px 12px 4px;font-size:11px;font-weight:700;letter-spacing:0.08em;color:#9bb5a4;text-transform:uppercase;">${label}</td></tr>`,
-    row("Legal Fees", formatGBP(b.legalFee)),
-    row("Legal Fees VAT at 20%", formatGBP(b.legalFeeVat)),
-  ];
+  rows.push(`
+    <tr><td colspan="2" style="padding:12px 0 4px;font-size:14px;font-weight:700;color:#16261f;">Legal Fees</td></tr>
+    <tr>
+      <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">Legal Fees</td>
+      <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(b.legalFee)}</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">VAT at 20%</td>
+      <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(b.legalFeeVat)}</td>
+    </tr>
+  `);
+
   if (b.supplements.length > 0) {
-    for (const s of b.supplements) lines.push(row(s.label, formatGBP(s.amount)));
-    lines.push(row("VAT at 20%", formatGBP(b.supplementsVat)));
+    rows.push(`<tr><td colspan="2" style="padding:12px 0 4px;font-size:14px;font-weight:700;color:#16261f;">Legal Supplements</td></tr>`);
+    for (const s of b.supplements) {
+      rows.push(`
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">${s.label}</td>
+          <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(s.amount)}</td>
+        </tr>
+      `);
+    }
+    rows.push(`
+      <tr>
+        <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">VAT at 20%</td>
+        <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(b.supplementsVat)}</td>
+      </tr>
+    `);
   }
-  for (const d of b.disbursements) lines.push(row(d.label, formatGBP(d.amount)));
-  if (b.sdlt !== null && b.sdlt > 0) lines.push(row("Stamp Duty Land Tax (estimated)", formatGBP(b.sdlt)));
-  lines.push(row(`${label} — Total, including VAT and disbursements`, formatGBP(b.subtotal), true));
-  if (b.unpricedOptions.length) lines.push(row("Also selected", b.unpricedOptions.join(", ")));
-  return lines.join("");
+
+  if (b.disbursements.length > 0) {
+    rows.push(`<tr><td colspan="2" style="padding:12px 0 4px;font-size:14px;font-weight:700;color:#16261f;">Disbursements</td></tr>`);
+    for (const d of b.disbursements) {
+      rows.push(`
+        <tr>
+          <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">${d.label}</td>
+          <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(d.amount)}</td>
+        </tr>
+      `);
+    }
+  }
+
+  if (b.sdlt !== null && b.sdlt > 0) {
+    rows.push(`
+      <tr>
+        <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">Stamp Duty Land Tax (estimated)</td>
+        <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(b.sdlt)}</td>
+      </tr>
+    `);
+  }
+
+  rows.push(`
+    <tr>
+      <td style="padding:10px 0;font-size:14px;font-weight:700;color:#16261f;border-top:2px solid #16261f;">Total, including VAT and disbursements</td>
+      <td style="padding:10px 0;font-size:14px;font-weight:700;color:#16261f;text-align:right;border-top:2px solid #16261f;">${formatGBP(b.subtotal)}</td>
+    </tr>
+  `);
+
+  return `
+    <h3 style="font-size:16px;font-weight:700;color:#16261f;margin:20px 0 8px;">Your ${label} Conveyancing Quote</h3>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      ${rows.join("")}
+    </table>
+    ${b.unpricedOptions.length > 0 ? `<p style="font-size:12px;color:#666;margin-top:8px;">Note: ${b.unpricedOptions.join(", ")} may carry additional fees confirmed on review.</p>` : ""}
+  `;
 }
 
-function buildEmailHtml(lead: LeadInput): string {
-  const rows: string[] = [
-    row("Name", `${lead.firstName} ${lead.lastName}`),
-    row("Email", lead.email),
-    row("Phone", lead.phone),
-    row("Transaction", transactionLabels[lead.transactionType] ?? lead.transactionType),
-  ];
+function buildClientEmailHtml(lead: LeadInput): string {
+  const txLabel = transactionLabels[lead.transactionType] ?? lead.transactionType;
+  const firstName = lead.firstName;
+
+  // Build transaction details section
+  let txDetails = "";
+  if (lead.transactionType === "sale-purchase") {
+    if (lead.saleSection) {
+      txDetails += `
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Address:</strong> ${lead.saleSection.transactionAddress || "—"}</p>
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Value:</strong> ${lead.saleSection.propertyValue ? formatGBP(lead.saleSection.propertyValue) : "—"}</p>
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Tenure:</strong> ${leaseholdLabel(lead.saleSection.isLeasehold, lead.saleSection.leaseholdType)}</p>
+      `;
+    }
+    if (lead.purchaseSection) {
+      txDetails += `
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Address:</strong> ${lead.purchaseSection.transactionAddress || "—"}</p>
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Value:</strong> ${lead.purchaseSection.propertyValue ? formatGBP(lead.purchaseSection.propertyValue) : "—"}</p>
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Tenure:</strong> ${leaseholdLabel(lead.purchaseSection.isLeasehold, lead.purchaseSection.leaseholdType)}</p>
+      `;
+    }
+    if (lead.hasMortgage !== null) {
+      txDetails += `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Mortgage:</strong> ${lead.hasMortgage ? "Yes" : "No"}</p>`;
+    }
+  } else {
+    txDetails = `
+      <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Transaction Type:</strong> ${txLabel}</p>
+      ${lead.transactionAddress ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Address:</strong> ${lead.transactionAddress}</p>` : ""}
+      ${lead.propertyValue ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Transaction Value:</strong> ${formatGBP(lead.propertyValue)}</p>` : ""}
+      ${lead.peopleInvolved ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Number of People Involved:</strong> ${lead.peopleInvolved}</p>` : ""}
+      <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Transaction Tenure:</strong> ${leaseholdLabel(lead.isLeasehold, lead.leaseholdType)}</p>
+      ${lead.hasMortgage !== null ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Mortgage:</strong> ${lead.hasMortgage ? "Yes" : "No"}</p>` : ""}
+      ${lead.additionalOptions?.length ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Additional Info:</strong> ${lead.additionalOptions.join(", ")}</p>` : ""}
+    `;
+  }
+
+  // Build quote section
+  let quoteSection = "";
+  if (lead.transactionType === "sale-purchase") {
+    if (lead.saleBreakdown) quoteSection += breakdownTable("Sale", lead.saleBreakdown);
+    if (lead.purchaseBreakdown) quoteSection += breakdownTable("Purchase", lead.purchaseBreakdown);
+    if (lead.combinedTotal !== null) {
+      quoteSection += `
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:16px;">
+          <tr>
+            <td style="padding:10px 0;font-size:15px;font-weight:700;color:#16261f;border-top:2px solid #16261f;">Combined Total</td>
+            <td style="padding:10px 0;font-size:15px;font-weight:700;color:#16261f;text-align:right;border-top:2px solid #16261f;">${formatGBP(lead.combinedTotal)}</td>
+          </tr>
+        </table>
+      `;
+    }
+  } else if (lead.singleBreakdown) {
+    quoteSection = breakdownTable(txLabel, lead.singleBreakdown);
+  }
+
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:20px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;">
+
+      <!-- Logo header -->
+      <tr>
+        <td align="center" style="padding:30px 40px 20px;border-bottom:1px solid #eee;">
+          <h1 style="margin:0;font-family:Georgia,serif;font-size:28px;font-weight:700;letter-spacing:2px;color:#16261f;">
+            MARCH<span style="color:#b8963e;">&amp;</span>BLOOM
+          </h1>
+          <p style="margin:4px 0 0;font-size:13px;letter-spacing:4px;color:#16261f;">LAW</p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding:30px 40px;">
+
+          <p style="margin:0 0 16px;font-size:14px;color:#333;">Hi ${firstName}</p>
+
+          <p style="margin:0 0 20px;font-size:14px;color:#333;line-height:1.6;">
+            Thank you for generating a ${txLabel} conveyancing quote with March &amp; Bloom Law, via
+            <a href="https://marchbloomlaw.com" style="color:#16261f;">www.marchbloomlaw.com</a>.
+          </p>
+
+          <!-- Nutshell box -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f8f8;border-radius:6px;margin-bottom:24px;">
+            <tr><td style="padding:20px 24px;">
+              <h2 style="margin:0 0 12px;font-size:16px;font-weight:700;color:#16261f;">March &amp; Bloom Law In A Nutshell</h2>
+              <ul style="margin:0;padding-left:20px;font-size:13px;color:#444;line-height:2;">
+                <li>ULTRA-Competitive Fixed Fees</li>
+                <li>Locally-Based with No Move No Fee</li>
+                <li>Dedicated Solicitor</li>
+                <li>Electronic Onboarding</li>
+                <li>We work with the majority of UK mortgage lenders</li>
+                <li>SRA Regulated &amp; CQS Accredited</li>
+              </ul>
+            </td></tr>
+          </table>
+
+          <!-- Discuss CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+            <tr><td align="center">
+              <a href="https://marchbloomlaw.com/discuss-quote"
+                style="display:inline-block;background:#16261f;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 36px;border-radius:4px;letter-spacing:0.5px;">
+                Discuss Your Quote
+              </a>
+            </td></tr>
+          </table>
+          <p style="margin:0 0 24px;font-size:13px;color:#444;text-align:center;">
+            Call our team on <a href="tel:02082554186" style="color:#16261f;font-weight:700;">020 8255 4186</a>, should you have any questions.
+          </p>
+
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+
+          <!-- Transaction details -->
+          <h3 style="font-size:15px;font-weight:700;color:#16261f;margin:0 0 12px;">Your Transaction Details:</h3>
+          ${txDetails}
+
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+
+          <!-- Quote breakdown -->
+          ${quoteSection}
+
+          <p style="margin:20px 0 0;font-size:11px;color:#888;line-height:1.6;">
+            Your Quote: The above quotation is based on a straightforward transaction and is based on the information that you have provided.
+          </p>
+
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+
+          <!-- Start your conveyancing -->
+          <h2 style="font-size:18px;font-weight:700;color:#16261f;margin:0 0 6px;">Start your Conveyancing</h2>
+          <p style="margin:0 0 16px;font-size:13px;color:#444;">Click the button below to start your conveyancing</p>
+
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+            <tr><td align="center">
+              <a href="https://marchbloomlaw.com/proceed-with-quote"
+                style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 36px;border-radius:4px;letter-spacing:0.5px;">
+                Proceed With Quote
+              </a>
+            </td></tr>
+          </table>
+          <p style="text-align:center;font-size:13px;color:#444;margin:0 0 12px;">OR</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr><td align="center">
+              <a href="https://marchbloomlaw.com/discuss-quote"
+                style="display:inline-block;background:#16261f;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 36px;border-radius:4px;letter-spacing:0.5px;">
+                Discuss Your Quote
+              </a>
+            </td></tr>
+          </table>
+
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+
+          <!-- FAQs -->
+          <h2 style="font-size:18px;font-weight:700;color:#16261f;margin:0 0 16px;">FAQs</h2>
+
+          <h4 style="font-size:13px;font-weight:700;color:#16261f;margin:0 0 6px;">Why is it important to instruct a solicitor as soon as an offer is accepted?</h4>
+          <p style="margin:0 0 16px;font-size:13px;color:#444;line-height:1.6;">In most cases, estate agents will not take the property off the market until they have your solicitor's details. As soon as a sale is agreed, you will usually be asked "Who is your conveyancer?" so the transaction can begin without delay. Many transactions fall through in the first few weeks due to delays in instructing your conveyancer, so it's important to be organised and have a suitable law firm ready to act.</p>
+
+          <h4 style="font-size:13px;font-weight:700;color:#16261f;margin:0 0 6px;">When will I receive my conveyancer's contact details?</h4>
+          <p style="margin:0 0 16px;font-size:13px;color:#444;line-height:1.6;">Once you confirm you wish to proceed, a member of the March &amp; Bloom Law 'New Quotes Team' will contact you to confirm your details and formally open your file. Your conveyancer's details will then be provided to you so they can be shared with your agent or broker.</p>
+
+          <h4 style="font-size:13px;font-weight:700;color:#16261f;margin:0 0 6px;">I've not confirmed my mortgage yet, can I still proceed?</h4>
+          <p style="margin:0 0 16px;font-size:13px;color:#444;line-height:1.6;">Yes. You do not need to have your mortgage in place to instruct a conveyancer once your offer has been accepted. Providing your solicitor's details to the agent demonstrates your intention to proceed with the purchase, avoiding delays and potential fall-throughs.</p>
+
+          <h4 style="font-size:13px;font-weight:700;color:#16261f;margin:0 0 6px;">When are the legal fees paid?</h4>
+          <p style="margin:0 0 4px;font-size:13px;color:#444;line-height:1.6;">There are three stages of payment:</p>
+          <ol style="margin:0 0 16px;padding-left:20px;font-size:13px;color:#444;line-height:1.8;">
+            <li>The Opening Fee — paid when you instruct March &amp; Bloom Law (included within your quote).</li>
+            <li>Initial Legal Disbursements — requested by March &amp; Bloom Law in the onboarding phase: £300.00 for purchases, £100.00 for sales or remortgages. These costs are part of your quoted fees and will be deducted from the quote.</li>
+            <li>Final balance — payable on completion of your transaction.</li>
+          </ol>
+
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+
+          <!-- No Move No Fee -->
+          <h3 style="font-size:15px;font-weight:700;color:#16261f;margin:0 0 8px;">No Move No Fee Policy</h3>
+          <p style="margin:0 0 16px;font-size:13px;color:#444;line-height:1.6;">
+            March and Bloom Law do not charge you abortive costs should your transaction fall through or be cancelled. Your file is simply placed on hold until you are ready to restart your transaction with a new property to purchase or a new buyer for your sale. Please contact our team using the details below once you are ready to restart your transaction. Please Note: The No Move No Fee Policy does not apply in cases where the transaction does not go through due to a personal change in circumstances forcing you to pull out, or if you wish to change to an alternative property as you have decided you do not wish to continue with the current property purchase, or where you have not secured lending (if required). In such cases, the firm's standard abortive fees will be charged for works carried out.
+          </p>
+
+          <!-- Additional charges -->
+          <h3 style="font-size:15px;font-weight:700;color:#16261f;margin:0 0 8px;">Are there any additional charges?</h3>
+          <p style="margin:0 0 16px;font-size:13px;color:#444;line-height:1.6;">
+            Your legal fee is based on the standard transaction outlined in your quote and assumes that the information provided at the outset is accurate and complete. The initial fixed legal fee is calculated using the details supplied to us when generating your quote. During the course of the transaction, additional costs may arise if further legal work becomes necessary or if the nature of the transaction changes that we were not aware of at the quote stage. Accepting this estimate does not constitute a fixed-fee agreement. It is therefore important that the information you provide at this stage is accurate and complete, as it forms the basis of your quotation. This is standard practice across any conveyancing firm.
+          </p>
+
+          <!-- Final CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+            <tr><td align="center">
+              <a href="https://marchbloomlaw.com/proceed-with-quote"
+                style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 36px;border-radius:4px;letter-spacing:0.5px;">
+                Proceed With Quote
+              </a>
+            </td></tr>
+          </table>
+
+          <p style="text-align:center;font-size:14px;font-weight:700;color:#16261f;margin:24px 0 16px;">We look forward to working closely with you.</p>
+
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style="padding:24px 40px;border-top:1px solid #eee;background:#f8f8f8;">
+          <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#16261f;">March &amp; Bloom Law</p>
+          <p style="margin:0 0 2px;font-size:12px;color:#444;">
+            <a href="tel:02082554186" style="color:#444;text-decoration:none;">020 8255 4186</a>
+          </p>
+          <p style="margin:0 0 2px;font-size:12px;color:#444;">
+            <a href="tel:07889555265" style="color:#444;text-decoration:none;">078 8955 5265</a>
+          </p>
+          <p style="margin:0 0 12px;font-size:12px;color:#444;">Office Address: 30 Durham Road, Haynes Park, London, SW20 0TW</p>
+          <h2 style="margin:16px 0 4px;font-family:Georgia,serif;font-size:20px;font-weight:700;letter-spacing:2px;color:#16261f;">
+            MARCH<span style="color:#b8963e;">&amp;</span>BLOOM
+          </h2>
+          <p style="margin:0 0 16px;font-size:10px;letter-spacing:4px;color:#16261f;">LAW</p>
+          <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;" />
+          <p style="margin:0 0 8px;font-size:11px;color:#888;font-weight:700;">Cybercrime Alert:</p>
+          <p style="margin:0 0 8px;font-size:11px;color:#888;line-height:1.6;">If you receive an email purporting to be from someone at this firm and telling you that we have changed our bank details, it is likely to be from a criminal. Please do not reply to that email — instead ring the person you have been dealing with at the firm to confirm whether the change is genuine. We will NOT accept responsibility if you transfer money into an incorrect bank account.</p>
+          <p style="margin:0 0 8px;font-size:11px;color:#888;line-height:1.6;">WARNING — This email and any files transmitted with it are confidential and may also be privileged. If you are not the intended recipient, you should not copy, forward or use any part of it or disclose its contents to any person. If you have received it in error please notify us immediately on <a href="tel:02082554186" style="color:#888;">020 8255 4186</a>. This email and any automatic copies should be deleted after you have contacted the system manager.</p>
+          <p style="margin:0;font-size:11px;color:#888;line-height:1.6;">This email is sent from the offices of March &amp; Bloom Law Limited, authorised and regulated by the Solicitors Regulation Authority (SRA ID number 646763) and registered in England and Wales.</p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>
+  `;
+}
+
+function buildInternalEmailHtml(lead: LeadInput): string {
+  const txLabel = transactionLabels[lead.transactionType] ?? lead.transactionType;
+  const rows: string[] = [];
+
+  const row = (label: string, value: string) =>
+    `<tr><td style="padding:5px 12px;color:#5c6b62;font-size:13px;width:40%;">${label}</td><td style="padding:5px 12px;font-weight:600;color:#16261f;font-size:13px;">${value}</td></tr>`;
+
+  rows.push(row("Name", `${lead.firstName} ${lead.lastName}`));
+  rows.push(row("Email", lead.email));
+  rows.push(row("Phone", lead.phone));
+  rows.push(row("Transaction", txLabel));
 
   if (lead.transactionType === "sale-purchase") {
     if (lead.saleSection) {
       rows.push(row("Sale Address", lead.saleSection.transactionAddress || "—"));
       rows.push(row("Sale Value", lead.saleSection.propertyValue ? formatGBP(lead.saleSection.propertyValue) : "—"));
       rows.push(row("Sale Tenure", leaseholdLabel(lead.saleSection.isLeasehold, lead.saleSection.leaseholdType)));
+      if (lead.saleSection.additionalOptions.length) rows.push(row("Sale Options", lead.saleSection.additionalOptions.join(", ")));
     }
     if (lead.purchaseSection) {
       rows.push(row("Purchase Address", lead.purchaseSection.transactionAddress || "—"));
       rows.push(row("Purchase Value", lead.purchaseSection.propertyValue ? formatGBP(lead.purchaseSection.propertyValue) : "—"));
       rows.push(row("Purchase Tenure", leaseholdLabel(lead.purchaseSection.isLeasehold, lead.purchaseSection.leaseholdType)));
+      if (lead.purchaseSection.additionalOptions.length) rows.push(row("Purchase Options", lead.purchaseSection.additionalOptions.join(", ")));
     }
     if (lead.hasMortgage !== null) rows.push(row("Mortgage", lead.hasMortgage ? "Yes" : "No"));
-    if (lead.saleBreakdown) rows.push(breakdownRows("Sale Breakdown", lead.saleBreakdown));
-    if (lead.purchaseBreakdown) rows.push(breakdownRows("Purchase Breakdown", lead.purchaseBreakdown));
-    if (lead.combinedTotal !== null) rows.push(row("Combined Total", formatGBP(lead.combinedTotal), true));
+    if (lead.combinedTotal !== null) rows.push(row("Combined Total", formatGBP(lead.combinedTotal)));
   } else {
-    if (lead.transactionAddress) rows.push(row("Property Address", lead.transactionAddress));
+    if (lead.transactionAddress) rows.push(row("Address", lead.transactionAddress));
     if (lead.propertyValue) rows.push(row("Property Value", formatGBP(lead.propertyValue)));
     if (lead.remortgageValue) rows.push(row("Remortgage Value", formatGBP(lead.remortgageValue)));
     rows.push(row("Tenure", leaseholdLabel(lead.isLeasehold, lead.leaseholdType)));
     if (lead.hasMortgage !== null) rows.push(row("Mortgage", lead.hasMortgage ? "Yes" : "No"));
-    if (lead.peopleBeingAdded !== null) rows.push(row("People Being Added", String(lead.peopleBeingAdded)));
-    if (lead.peopleBeingRemoved !== null) rows.push(row("People Being Removed", String(lead.peopleBeingRemoved)));
-    if (lead.singleBreakdown) rows.push(breakdownRows(transactionLabels[lead.transactionType] ?? "Breakdown", lead.singleBreakdown));
+    if (lead.additionalOptions?.length) rows.push(row("Additional Options", lead.additionalOptions.join(", ")));
+    if (lead.singleBreakdown) rows.push(row("Quote Total", formatGBP(lead.singleBreakdown.subtotal)));
   }
 
   if (lead.message) rows.push(row("Message", lead.message));
 
   return `
     <div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
-      <h2 style="color:#16261f;">New quote enquiry</h2>
-      <table style="width:100%;border-collapse:collapse;">${rows.join("")}</table>
+      <h2 style="color:#16261f;">New quote enquiry — ${lead.firstName} ${lead.lastName}</h2>
+      <table style="width:100%;border-collapse:collapse;background:#f9f9f9;border-radius:6px;">
+        ${rows.join("")}
+      </table>
     </div>
   `;
 }
 
 export async function sendLeadNotificationEmail(lead: LeadInput): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.LEAD_NOTIFICATION_EMAIL;
+  const notificationTo = process.env.LEAD_NOTIFICATION_EMAIL;
   const from = process.env.RESEND_FROM_EMAIL;
 
-  if (!apiKey || !to || !from) {
+  if (!apiKey || !notificationTo || !from) {
     console.warn("[email] Missing env vars — skipping notification email.");
     return;
   }
 
+  const txLabel = transactionLabels[lead.transactionType] ?? lead.transactionType;
+
   try {
     const resend = new Resend(apiKey);
+
+    // 1. Email to the client with the full branded template
     await resend.emails.send({
       from,
-      to,
-      replyTo: lead.email,
-      subject: `New enquiry — ${lead.firstName} ${lead.lastName} (${transactionLabels[lead.transactionType] ?? lead.transactionType})`,
-      html: buildEmailHtml(lead),
+      to: lead.email,
+      replyTo: notificationTo,
+      subject: `Your ${txLabel} conveyancing quote — March & Bloom Law`,
+      html: buildClientEmailHtml(lead),
     });
+
+    // 2. Internal notification email to the firm
+    await resend.emails.send({
+      from,
+      to: notificationTo,
+      replyTo: lead.email,
+      subject: `New enquiry — ${lead.firstName} ${lead.lastName} (${txLabel})`,
+      html: buildInternalEmailHtml(lead),
+    });
+
   } catch (err) {
-    console.error("[email] Failed to send lead notification:", err);
+    console.error("[email] Failed to send emails:", err);
   }
 }
