@@ -5,7 +5,7 @@ import SRA from "@/public/badges/SRA-logo.png";
 const badges = [
   {
     name: "Solicitors Regulation Authority",
-    href: "https://www.sra.org.uk/consumers/register/firm/?sraNumber=646763",
+    href: "https://www.sra.org.uk/validation?083082065+069110103108105115104067111108111117114+068101102097117108116046112110103+104116116112115058047047109097114099104098108111111109108097119046099111109047&UGxEQk3X8u8co7ujqky8RmP3qGhvzOG0cFYDGv5xTvw%3d",
     src: SRA,
     alt: "Regulated by the Solicitors Regulation Authority",
   },
@@ -38,7 +38,7 @@ export default function AccreditationBadges({
             alt={badge.alt}
             width={120}
             height={48}
-            className="h-24 w-auto object-contain"
+            className="h-16 w-auto object-contain"
           />
         </a>
       ))}

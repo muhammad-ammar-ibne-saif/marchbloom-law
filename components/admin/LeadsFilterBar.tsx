@@ -9,7 +9,9 @@ export default function LeadsFilterBar() {
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [transactionType, setTransactionType] = useState(searchParams.get("transactionType") || "all");
+  const [transactionType, setTransactionType] = useState(
+    searchParams.get("transactionType") || "all"
+  );
   const [status, setStatus] = useState(searchParams.get("status") || "all");
   const [dateFrom, setDateFrom] = useState(searchParams.get("dateFrom") || "");
   const [dateTo, setDateTo] = useState(searchParams.get("dateTo") || "");
@@ -18,7 +20,8 @@ export default function LeadsFilterBar() {
     e?.preventDefault();
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    if (transactionType !== "all") params.set("transactionType", transactionType);
+    if (transactionType !== "all")
+      params.set("transactionType", transactionType);
     if (status !== "all") params.set("status", status);
     if (dateFrom) params.set("dateFrom", dateFrom);
     if (dateTo) params.set("dateTo", dateTo);
@@ -47,7 +50,10 @@ export default function LeadsFilterBar() {
           Search
         </label>
         <div className="relative">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+          <Search
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -61,11 +67,17 @@ export default function LeadsFilterBar() {
         <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
           Transaction
         </label>
-        <select value={transactionType} onChange={(e) => setTransactionType(e.target.value)} className={selectClasses}>
+        <select
+          value={transactionType}
+          onChange={(e) => setTransactionType(e.target.value)}
+          className={selectClasses}
+        >
           <option value="all">All</option>
-          <option value="purchase">Buying</option>
-          <option value="sale">Selling</option>
-          <option value="remortgage">Remortgaging</option>
+          <option value="sale">Sale</option>
+          <option value="purchase">Purchase</option>
+          <option value="sale-purchase">Sale & Purchase</option>
+          <option value="remortgage">Remortgage</option>
+          <option value="transfer-of-equity">Transfer of Equity</option>
         </select>
       </div>
 
@@ -73,7 +85,11 @@ export default function LeadsFilterBar() {
         <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
           Status
         </label>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClasses}>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className={selectClasses}
+        >
           <option value="all">All</option>
           <option value="new">New</option>
           <option value="contacted">Contacted</option>
@@ -87,14 +103,24 @@ export default function LeadsFilterBar() {
         <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
           From
         </label>
-        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={selectClasses} />
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className={selectClasses}
+        />
       </div>
 
       <div>
         <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">
           To
         </label>
-        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={selectClasses} />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className={selectClasses}
+        />
       </div>
 
       <div className="flex gap-2">

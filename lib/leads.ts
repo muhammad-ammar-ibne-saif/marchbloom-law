@@ -1,5 +1,6 @@
 import { Collection, ObjectId } from "mongodb";
 import { getDb } from "./mongodb";
+import { DetailedBreakdown, LeaseholdType } from "./pricing";
 
 export type LeadStatus = "new" | "contacted" | "quoted" | "instructed" | "completed";
 
@@ -8,7 +9,7 @@ export type PropertySection = {
   addressUnknown: boolean;
   propertyValue: number | null;
   isLeasehold: boolean;
-  leaseholdType: "standard" | "high-rise" | null;
+  leaseholdType: LeaseholdType | null;
   peopleInvolved: number;
   additionalOptions: string[];
 };
@@ -20,28 +21,25 @@ export type Lead = {
   email: string;
   phone: string;
   transactionType: "purchase" | "sale" | "sale-purchase" | "remortgage" | "transfer-of-equity";
-  // For sale, remortgage, transfer-of-equity, single-type transactions
   transactionAddress: string;
   addressUnknown: boolean;
   propertyValue: number | null;
   isLeasehold: boolean;
-  leaseholdType: "standard" | "high-rise" | null;
+  leaseholdType: LeaseholdType | null;
   peopleInvolved: number;
   hasMortgage: boolean | null;
   remortgageValue: number | null;
   peopleBeingAdded: number | null;
   peopleBeingRemoved: number | null;
   additionalOptions: string[];
-  // Sale & Purchase separate sections
   saleSection: PropertySection | null;
   purchaseSection: PropertySection | null;
+  saleBreakdown: DetailedBreakdown | null;
+  purchaseBreakdown: DetailedBreakdown | null;
+  singleBreakdown: DetailedBreakdown | null;
+  combinedTotal: number | null;
+  intent: "discuss" | "proceed" | null;
   message: string;
-  estimate: {
-    legalFee: number;
-    leaseholdFee: number;
-    disbursementsEstimate: number;
-    total: number;
-  } | null;
   status: LeadStatus;
   createdAt: Date;
 };
@@ -86,7 +84,11 @@ export async function listLeads(filters: LeadFilters = {}) {
   if (dateFrom || dateTo) {
     const createdAt: Record<string, Date> = {};
     if (dateFrom) createdAt.$gte = new Date(dateFrom);
-    if (dateTo) { const end = new Date(dateTo); end.setHours(23, 59, 59, 999); createdAt.$lte = end; }
+    if (dateTo) {
+      const end = new Date(dateTo);
+      end.setHours(23, 59, 59, 999);
+      createdAt.$lte = end;
+    }
     query.createdAt = createdAt;
   }
 

@@ -2,19 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, Phone, Calendar, Home, KeyRound } from "lucide-react";
 import { getLeadById } from "@/lib/leads";
+import { DetailedBreakdown, formatGBP } from "@/lib/pricing";
 import StatusSelect from "@/components/admin/StatusSelect";
 import BloomMark from "@/components/BloomMark";
 
 export const dynamic = "force-dynamic";
-
-function formatGBP(amount: number | null): string {
-  if (amount === null || amount === undefined) return "—";
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
 
 const transactionLabels: Record<string, string> = {
   purchase: "Purchase",
@@ -23,6 +15,99 @@ const transactionLabels: Record<string, string> = {
   remortgage: "Remortgage",
   "transfer-of-equity": "Transfer of Equity",
 };
+
+function leaseholdLabel(isLeasehold: boolean, leaseholdType: string | null) {
+  return !isLeasehold
+    ? "Freehold"
+    : leaseholdType === "high-rise"
+      ? "Leasehold — 5+ floors (BSA, £350)"
+      : "Leasehold — under 5 floors (£300)";
+}
+
+function BreakdownBlock({
+  title,
+  breakdown,
+}: {
+  title: string;
+  breakdown: DetailedBreakdown;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-ink-900/8">
+      <div className="bg-ink-900 px-4 py-2.5">
+        <h4 className="font-display text-sm text-bone-50">{title}</h4>
+      </div>
+      <div className="divide-y divide-ink-900/8 bg-bone-100">
+        <div className="px-4 py-2">
+          <div className="flex justify-between py-1 text-sm">
+            <dt className="text-ink-600">Legal Fees</dt>
+            <dd className="font-medium text-ink-900">
+              {formatGBP(breakdown.legalFee)}
+            </dd>
+          </div>
+          <div className="flex justify-between py-1 text-sm">
+            <dt className="text-ink-600">Legal Fees VAT at 20%</dt>
+            <dd className="font-medium text-ink-900">
+              {formatGBP(breakdown.legalFeeVat)}
+            </dd>
+          </div>
+        </div>
+        {breakdown.supplements.length > 0 && (
+          <div className="px-4 py-2">
+            {breakdown.supplements.map((s) => (
+              <div key={s.label} className="flex justify-between py-1 text-sm">
+                <dt className="text-ink-600">{s.label}</dt>
+                <dd className="font-medium text-ink-900">
+                  {formatGBP(s.amount)}
+                </dd>
+              </div>
+            ))}
+            <div className="flex justify-between py-1 text-sm">
+              <dt className="text-ink-600">VAT at 20%</dt>
+              <dd className="font-medium text-ink-900">
+                {formatGBP(breakdown.supplementsVat)}
+              </dd>
+            </div>
+          </div>
+        )}
+        {breakdown.disbursements.length > 0 && (
+          <div className="px-4 py-2">
+            {breakdown.disbursements.map((d) => (
+              <div key={d.label} className="flex justify-between py-1 text-sm">
+                <dt className="text-ink-600">{d.label}</dt>
+                <dd className="font-medium text-ink-900">
+                  {formatGBP(d.amount)}
+                </dd>
+              </div>
+            ))}
+          </div>
+        )}
+        {breakdown.sdlt !== null && breakdown.sdlt > 0 && (
+          <div className="px-4 py-2">
+            <div className="flex justify-between py-1 text-sm">
+              <dt className="text-ink-600">SDLT (estimated)</dt>
+              <dd className="font-medium text-ink-900">
+                {formatGBP(breakdown.sdlt)}
+              </dd>
+            </div>
+          </div>
+        )}
+        <div className="flex justify-between bg-ink-900/[0.04] px-4 py-2.5">
+          <dt className="font-medium text-ink-900">
+            Total, incl. VAT and disbursements
+          </dt>
+          <dd className="font-display text-base font-semibold text-ink-900">
+            {formatGBP(breakdown.subtotal)}
+          </dd>
+        </div>
+      </div>
+      {breakdown.unpricedOptions.length > 0 && (
+        <p className="border-t border-ink-900/8 px-4 py-2 text-xs text-ink-500">
+          Unpriced options selected: {breakdown.unpricedOptions.join(", ")}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default async function LeadDetailPage({
   params,
@@ -59,11 +144,18 @@ export default async function LeadDetailPage({
               minute: "2-digit",
             })}
           </p>
+          {lead.intent && (
+            <span className="mt-2 inline-block rounded-full bg-brass-500/15 px-3 py-1 text-xs font-medium text-brass-700">
+              Wants to:{" "}
+              {lead.intent === "proceed"
+                ? "Proceed with quote"
+                : "Discuss quote"}
+            </span>
+          )}
         </div>
         <StatusSelect id={params.id} initialStatus={lead.status} />
       </div>
 
-      {/* Contact */}
       <section className="mt-8 rounded-xl2 border border-ink-900/10 bg-bone-50 p-6">
         <h2 className="font-display text-lg text-ink-900">Contact details</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -99,13 +191,10 @@ export default async function LeadDetailPage({
         </dl>
       </section>
 
-      {/* Transaction */}
       <section className="mt-6 rounded-xl2 border border-ink-900/10 bg-bone-50 p-6">
         <h2 className="font-display text-lg text-ink-900">
           Transaction details
         </h2>
-
-        {/* Top-level type */}
         <div className="mt-4 flex items-start gap-2.5">
           <Home size={16} className="mt-0.5 shrink-0 text-brass-600" />
           <div>
@@ -118,10 +207,8 @@ export default async function LeadDetailPage({
           </div>
         </div>
 
-        {/* Sale & Purchase: show each section separately */}
-        {lead.transactionType === "sale-purchase" && (
+        {lead.transactionType === "sale-purchase" ? (
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            {/* Sale section */}
             {lead.saleSection && (
               <div className="rounded-lg border border-ink-900/8 bg-bone-100 p-4">
                 <h3 className="font-display text-sm uppercase tracking-wide text-ink-700">
@@ -139,17 +226,18 @@ export default async function LeadDetailPage({
                   <div>
                     <dt className="text-xs text-ink-500">Property Value</dt>
                     <dd className="font-medium text-ink-900">
-                      {formatGBP(lead.saleSection.propertyValue)}
+                      {lead.saleSection.propertyValue
+                        ? formatGBP(lead.saleSection.propertyValue)
+                        : "—"}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-ink-500">Tenure</dt>
                     <dd className="font-medium text-ink-900">
-                      {!lead.saleSection.isLeasehold
-                        ? "Freehold"
-                        : lead.saleSection.leaseholdType === "high-rise"
-                          ? "Leasehold — 5+ floors (BSA, £350)"
-                          : "Leasehold — under 5 floors (£300)"}
+                      {leaseholdLabel(
+                        lead.saleSection.isLeasehold,
+                        lead.saleSection.leaseholdType
+                      )}
                     </dd>
                   </div>
                   <div>
@@ -162,12 +250,12 @@ export default async function LeadDetailPage({
                     <div>
                       <dt className="text-xs text-ink-500">Options</dt>
                       <dd className="mt-1 flex flex-wrap gap-1">
-                        {lead.saleSection.additionalOptions.map((opt) => (
+                        {lead.saleSection.additionalOptions.map((o) => (
                           <span
-                            key={opt}
+                            key={o}
                             className="rounded-full bg-ink-900/8 px-2 py-0.5 text-xs text-ink-700"
                           >
-                            {opt}
+                            {o}
                           </span>
                         ))}
                       </dd>
@@ -176,8 +264,6 @@ export default async function LeadDetailPage({
                 </dl>
               </div>
             )}
-
-            {/* Purchase section */}
             {lead.purchaseSection && (
               <div className="rounded-lg border border-ink-900/8 bg-bone-100 p-4">
                 <h3 className="font-display text-sm uppercase tracking-wide text-ink-700">
@@ -195,17 +281,18 @@ export default async function LeadDetailPage({
                   <div>
                     <dt className="text-xs text-ink-500">Property Value</dt>
                     <dd className="font-medium text-ink-900">
-                      {formatGBP(lead.purchaseSection.propertyValue)}
+                      {lead.purchaseSection.propertyValue
+                        ? formatGBP(lead.purchaseSection.propertyValue)
+                        : "—"}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-ink-500">Tenure</dt>
                     <dd className="font-medium text-ink-900">
-                      {!lead.purchaseSection.isLeasehold
-                        ? "Freehold"
-                        : lead.purchaseSection.leaseholdType === "high-rise"
-                          ? "Leasehold — 5+ floors (BSA, £350)"
-                          : "Leasehold — under 5 floors (£300)"}
+                      {leaseholdLabel(
+                        lead.purchaseSection.isLeasehold,
+                        lead.purchaseSection.leaseholdType
+                      )}
                     </dd>
                   </div>
                   <div>
@@ -226,12 +313,12 @@ export default async function LeadDetailPage({
                     <div>
                       <dt className="text-xs text-ink-500">Options</dt>
                       <dd className="mt-1 flex flex-wrap gap-1">
-                        {lead.purchaseSection.additionalOptions.map((opt) => (
+                        {lead.purchaseSection.additionalOptions.map((o) => (
                           <span
-                            key={opt}
+                            key={o}
                             className="rounded-full bg-ink-900/8 px-2 py-0.5 text-xs text-ink-700"
                           >
-                            {opt}
+                            {o}
                           </span>
                         ))}
                       </dd>
@@ -241,10 +328,7 @@ export default async function LeadDetailPage({
               </div>
             )}
           </div>
-        )}
-
-        {/* All other types: show flat fields as before */}
-        {lead.transactionType !== "sale-purchase" && (
+        ) : (
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
             {lead.transactionAddress && (
               <div>
@@ -256,14 +340,16 @@ export default async function LeadDetailPage({
                 </dd>
               </div>
             )}
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-ink-500">
-                Property Value
-              </dt>
-              <dd className="text-sm font-medium text-ink-900">
-                {formatGBP(lead.propertyValue)}
-              </dd>
-            </div>
+            {lead.propertyValue !== null && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-ink-500">
+                  Property Value
+                </dt>
+                <dd className="text-sm font-medium text-ink-900">
+                  {formatGBP(lead.propertyValue)}
+                </dd>
+              </div>
+            )}
             {lead.remortgageValue && (
               <div>
                 <dt className="text-xs uppercase tracking-wide text-ink-500">
@@ -274,22 +360,18 @@ export default async function LeadDetailPage({
                 </dd>
               </div>
             )}
-            <div className="flex items-start gap-2.5 ">
+            <div className="flex items-start gap-2.5">
               <KeyRound size={16} className="mt-0.5 shrink-0 text-brass-600" />
               <div>
                 <dt className="text-xs uppercase tracking-wide text-ink-500">
                   Tenure
                 </dt>
                 <dd className="text-sm font-medium text-ink-900">
-                  {!lead.isLeasehold
-                    ? "Freehold"
-                    : lead.leaseholdType === "high-rise"
-                      ? "Leasehold — 5+ floors (BSA high-rise, £350)"
-                      : "Leasehold — less than 5 floors (£300)"}
+                  {leaseholdLabel(lead.isLeasehold, lead.leaseholdType)}
                 </dd>
               </div>
             </div>
-            {lead.hasMortgage !== null && lead.hasMortgage !== undefined && (
+            {lead.hasMortgage !== null && (
               <div>
                 <dt className="text-xs uppercase tracking-wide text-ink-500">
                   Mortgage
@@ -299,100 +381,67 @@ export default async function LeadDetailPage({
                 </dd>
               </div>
             )}
-            {lead.peopleInvolved > 0 && (
+            {lead.peopleBeingAdded !== null && (
               <div>
                 <dt className="text-xs uppercase tracking-wide text-ink-500">
-                  People Involved
+                  People Being Added
                 </dt>
                 <dd className="text-sm font-medium text-ink-900">
-                  {lead.peopleInvolved}
+                  {lead.peopleBeingAdded}
                 </dd>
               </div>
             )}
-            {lead.peopleBeingAdded !== null &&
-              lead.peopleBeingAdded !== undefined && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-ink-500">
-                    People Being Added
-                  </dt>
-                  <dd className="text-sm font-medium text-ink-900">
-                    {lead.peopleBeingAdded}
-                  </dd>
-                </div>
-              )}
-            {lead.peopleBeingRemoved !== null &&
-              lead.peopleBeingRemoved !== undefined && (
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-ink-500">
-                    People Being Removed
-                  </dt>
-                  <dd className="text-sm font-medium text-ink-900">
-                    {lead.peopleBeingRemoved}
-                  </dd>
-                </div>
-              )}
-          </dl>
-        )}
-
-        {/* Additional options for non sale-purchase types */}
-        {lead.transactionType !== "sale-purchase" &&
-          lead.additionalOptions?.length > 0 && (
-            <div className="mt-4 border-t border-ink-900/10 pt-4">
-              <dt className="text-xs uppercase tracking-wide text-ink-500">
-                Additional Options Selected
-              </dt>
-              <dd className="mt-2 flex flex-wrap gap-2">
-                {lead.additionalOptions.map((opt) => (
-                  <span
-                    key={opt}
-                    className="rounded-full bg-ink-900/8 px-3 py-1 text-xs font-medium text-ink-700"
-                  >
-                    {opt}
-                  </span>
-                ))}
-              </dd>
-            </div>
-          )}
-      </section>
-
-      {/* Estimate */}
-      {lead.estimate && (
-        <section className="mt-6 rounded-xl2 border border-ink-900/10 bg-bone-50 p-6">
-          <h2 className="font-display text-lg text-ink-900">
-            Estimate shown to client
-          </h2>
-          <div className="mt-4 space-y-2 text-sm text-ink-700">
-            <div className="flex justify-between">
-              <span>Legal fee</span>
-              <span className="font-medium">
-                {formatGBP(lead.estimate.legalFee)}
-              </span>
-            </div>
-            {lead.estimate.leaseholdFee > 0 && (
-              <div className="flex justify-between">
-                <span>Leasehold supplement</span>
-                <span className="font-medium">
-                  {formatGBP(lead.estimate.leaseholdFee)}
-                </span>
+            {lead.peopleBeingRemoved !== null && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-ink-500">
+                  People Being Removed
+                </dt>
+                <dd className="text-sm font-medium text-ink-900">
+                  {lead.peopleBeingRemoved}
+                </dd>
               </div>
             )}
-            <div className="flex justify-between">
-              <span>Estimated disbursements</span>
-              <span className="font-medium">
-                {formatGBP(lead.estimate.disbursementsEstimate)}
-              </span>
-            </div>
-            <div className="flex justify-between border-t border-ink-900/10 pt-2 text-base">
-              <span className="font-medium text-ink-900">Total</span>
-              <span className="font-display text-lg text-ink-900">
-                {formatGBP(lead.estimate.total)}
-              </span>
-            </div>
+          </dl>
+        )}
+      </section>
+
+      {(lead.saleBreakdown ||
+        lead.purchaseBreakdown ||
+        lead.singleBreakdown) && (
+        <section className="mt-6 rounded-xl2 border border-ink-900/10 bg-bone-50 p-6">
+          <h2 className="font-display text-lg text-ink-900">
+            Quotation given to client
+          </h2>
+          <div className="mt-4 space-y-4">
+            {lead.combinedTotal !== null && (
+              <div className="rounded-lg bg-ink-900 p-4 text-bone-100">
+                <p className="text-xs uppercase tracking-wide text-bone-100/60">
+                  Combined total
+                </p>
+                <p className="font-display text-2xl">
+                  {formatGBP(lead.combinedTotal)}
+                </p>
+              </div>
+            )}
+            {lead.saleBreakdown && (
+              <BreakdownBlock title="Sale" breakdown={lead.saleBreakdown} />
+            )}
+            {lead.purchaseBreakdown && (
+              <BreakdownBlock
+                title="Purchase"
+                breakdown={lead.purchaseBreakdown}
+              />
+            )}
+            {lead.singleBreakdown && (
+              <BreakdownBlock
+                title={transactionLabels[lead.transactionType] ?? "Quote"}
+                breakdown={lead.singleBreakdown}
+              />
+            )}
           </div>
         </section>
       )}
 
-      {/* Message */}
       <section className="mt-6 rounded-xl2 border border-ink-900/10 bg-bone-50 p-6">
         <h2 className="font-display text-lg text-ink-900">Message</h2>
         <p className="mt-3 text-sm leading-relaxed text-ink-700">
