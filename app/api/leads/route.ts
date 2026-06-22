@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLead, LeadInput } from "@/lib/leads";
 import { sendLeadNotificationEmail } from "@/lib/email";
+import { DetailedBreakdown, LineItem } from "@/lib/pricing"
 
 const VALID_TYPES = ["purchase", "sale", "sale-purchase", "remortgage", "transfer-of-equity"];
 
@@ -28,16 +29,28 @@ function parseSection(raw: unknown) {
   };
 }
 
-function parseBreakdown(raw: unknown) {
+function parseLineItems(raw: unknown): LineItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+    .map((item) => ({
+      label: String(item.label ?? ""),
+      amount: typeof item.amount === "number" ? item.amount : 0,
+    }));
+}
+
+function parseBreakdown(raw: unknown): DetailedBreakdown | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   return {
     legalFee: typeof r.legalFee === "number" ? r.legalFee : 0,
+    legalFeeVat: typeof r.legalFeeVat === "number" ? r.legalFeeVat : 0,
     leaseholdFee: typeof r.leaseholdFee === "number" ? r.leaseholdFee : 0,
     leaseholdLabel: typeof r.leaseholdLabel === "string" ? r.leaseholdLabel : null,
-    supplements: Array.isArray(r.supplements) ? r.supplements : [],
+    supplements: parseLineItems(r.supplements),
+    supplementsVat: typeof r.supplementsVat === "number" ? r.supplementsVat : 0,
     unpricedOptions: Array.isArray(r.unpricedOptions) ? r.unpricedOptions.map(String) : [],
-    disbursements: Array.isArray(r.disbursements) ? r.disbursements : [],
+    disbursements: parseLineItems(r.disbursements),
     sdlt: typeof r.sdlt === "number" ? r.sdlt : null,
     subtotal: typeof r.subtotal === "number" ? r.subtotal : 0,
   };
