@@ -3,6 +3,7 @@ import Button from "@/components/Button";
 import AnimateIn from "@/components/AnimateIn";
 import FAQAccordion from "@/components/FAQAccordion";
 import { faqs, team } from "@/lib/data";
+import Image from "next/image";
 
 export default function AboutPage() {
   return (
@@ -48,7 +49,29 @@ export default function AboutPage() {
           </AnimateIn>
         </Container>
       </section>
-
+{/* About hero image */}
+      <section className="bg-bone-50 py-16">
+        <Container className="grid gap-12 lg:grid-cols-2">
+          <AnimateIn>
+            <h2 className="font-display text-2xl text-ink-900">Who we are</h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-ink-700">
+              March &amp; Bloom Law is a London property practice built
+              around lasting relationships rather than one-off transactions.
+              We act for private individuals, small businesses, and larger
+              corporate clients alike, shaping the service around what each
+              matter actually needs.
+            </p>
+          </AnimateIn>
+          <AnimateIn delay={0.1} className="relative h-64 overflow-hidden rounded-xl2 shadow-soft lg:h-auto">
+            <Image
+              src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1000&q=80&fit=crop"
+              alt="March & Bloom Law office"
+              fill
+              className="object-cover"
+            />
+          </AnimateIn>
+        </Container>
+      </section>
       <section className="bg-bone-100 py-16">
         <Container>
           <AnimateIn className="text-center">

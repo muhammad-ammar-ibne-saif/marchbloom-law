@@ -4,16 +4,16 @@ import AnimateIn from "@/components/AnimateIn";
 import ServiceCard from "@/components/ServiceCard";
 import FAQAccordion from "@/components/FAQAccordion";
 import { faqs, services } from "@/lib/data";
+import Image from "next/image";
 
 export default function ServicesPage() {
   return (
     <>
-      <section className="bg-bone-100 pb-16 pt-20 sm:pt-24">
-        <Container>
+     {/* Hero with image */}
+      <section className="relative overflow-hidden bg-bone-100 pb-16 pt-20 sm:pt-24">
+        <Container className="grid items-center gap-10 lg:grid-cols-2">
           <AnimateIn>
-            <p className="font-display text-sm uppercase tracking-[0.2em] text-brass-600">
-              Our services
-            </p>
+            <p className="font-display text-sm uppercase tracking-[0.2em] text-brass-600">Our services</p>
             <h1 className="mt-4 max-w-2xl text-balance font-display text-4xl text-ink-900 sm:text-5xl">
               Specialist support for every property transaction
             </h1>
@@ -21,6 +21,14 @@ export default function ServicesPage() {
               One firm, one standard of care, across residential, commercial,
               and landlord &amp; tenant matters.
             </p>
+          </AnimateIn>
+          <AnimateIn delay={0.15} className="relative h-72 overflow-hidden rounded-xl2 shadow-lift lg:h-80">
+            <Image
+              src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1000&q=80&fit=crop"
+              alt="Property law services"
+              fill
+              className="object-cover"
+            />
           </AnimateIn>
         </Container>
       </section>
