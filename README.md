@@ -116,20 +116,4 @@ Palette and type are defined as design tokens in `tailwind.config.ts`
 components, so the whole look can be retuned from one file. Animations use
 `prefers-reduced-motion` fallbacks in `app/globals.css`.
 
-## Before going live
 
-- Replace the placeholder `BloomMark` SVG with the firm's actual logo file.
-- Set up MongoDB, Resend, and the admin credentials per the environment
-  variables section above — none of the lead pipeline works without them.
-- Change `ADMIN_PASSWORD` and `SESSION_SECRET` to real, unique values before
-  deploying anywhere public; the ones in `.env.example` are placeholders.
-- Confirm the remortgage fee logic in `lib/pricing.ts` against the firm's
-  actual rate card — see the note above.
-- Confirm the registered office, correspondence address, phone numbers, and
-  SRA/company numbers in `lib/data.ts` are current.
-- Add a favicon and Open Graph image in `app/` (Next.js picks up
-  `favicon.ico`, `opengraph-image.png`, etc. automatically by filename).
-- `components/ContactForm.tsx` is no longer used on any page — keep it as a
-  simpler fallback form elsewhere, or delete it.
-- Consider adding a CAPTCHA (e.g. Cloudflare Turnstile) alongside the
-  honeypot if spam submissions become an issue once the site is public.
