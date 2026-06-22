@@ -1,33 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-declare global {
-  interface Window {
-    google?: any;
-    __googleMapsCallback?: () => void;
-  }
-}
+type Suggestion = { address: string; id: string };
 
-let loadingPromise: Promise<void> | null = null;
-
-function loadGoogleMaps(apiKey: string): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (window.google?.maps?.places) return Promise.resolve();
-  if (loadingPromise) return loadingPromise;
-
-  loadingPromise = new Promise((resolve) => {
-    window.__googleMapsCallback = () => resolve();
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=__googleMapsCallback`;
-    script.async = true;
-    document.head.appendChild(script);
-  });
-
-  return loadingPromise;
-}
-
-type AddressAutocompleteProps = {
+type Props = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
@@ -43,51 +20,72 @@ export default function AddressAutocomplete({
   required,
   placeholder = "Start typing your address",
   className = "",
-}: AddressAutocompleteProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
-  const id = useId();
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+}: Props) {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const token = process.env.NEXT_PUBLIC_GETADDRESS_DOMAIN_TOKEN;
 
   useEffect(() => {
-    if (!apiKey || disabled) return;
-    let cancelled = false;
-
-    loadGoogleMaps(apiKey).then(() => {
-      if (cancelled || !inputRef.current || !window.google) return;
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(
-        inputRef.current,
-        {
-          componentRestrictions: { country: "gb" },
-          fields: ["formatted_address"],
-          types: ["address"],
+    if (!value || value.length < 3 || disabled || !token) {
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://api.getaddress.io/autocomplete/${encodeURIComponent(value)}?api-key=${token}&all=true`
+        );
+        const data = await res.json();
+        if (data.suggestions?.length) {
+          setSuggestions(data.suggestions.slice(0, 6));
+          setOpen(true);
+        } else {
+          setSuggestions([]);
+          setOpen(false);
         }
-      );
-      autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current.getPlace();
-        if (place?.formatted_address) onChange(place.formatted_address);
-      });
-    });
+      } catch {
+        setSuggestions([]);
+      }
+    }, 300);
+  }, [value, disabled, token]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [apiKey, disabled, onChange]);
+  function select(suggestion: Suggestion) {
+    onChange(suggestion.address);
+    setSuggestions([]);
+    setOpen(false);
+  }
 
   return (
-    <input
-      ref={inputRef}
-      id={id}
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-      required={required}
-      placeholder={
-        apiKey ? placeholder : `${placeholder} (lookup not configured)`
-      }
-      autoComplete="off"
-      className={className}
-    />
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        disabled={disabled}
+        required={required}
+        placeholder={placeholder}
+        autoComplete="off"
+        className={className}
+      />
+      {open && suggestions.length > 0 && (
+        <ul className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-ink-900/15 bg-bone-50 shadow-lift">
+          {suggestions.map((s) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onMouseDown={() => select(s)}
+                className="w-full px-4 py-2.5 text-left text-sm text-ink-800 hover:bg-ink-900/5"
+              >
+                {s.address}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
