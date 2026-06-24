@@ -391,7 +391,7 @@ export async function sendLeadNotificationEmail(lead: LeadInput): Promise<void> 
 
     await resend.emails.send({
       from,
-      to: notificationTo,
+      to: notificationTo, 
       replyTo: lead.email,
       subject: `New enquiry — ${lead.firstName} ${lead.lastName} (${txLabel})`,
       html: buildInternalEmailHtml(lead),
@@ -401,3 +401,5 @@ export async function sendLeadNotificationEmail(lead: LeadInput): Promise<void> 
     console.error("[email] Failed to send emails:", err);
   }
 }
+
+// fjr
