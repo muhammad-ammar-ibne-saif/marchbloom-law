@@ -17,6 +17,11 @@ type QuoteData = {
   transactionAddress: string;
   transactionValue: number | null;
   isLeasehold: boolean;
+  hasMortgage: boolean;
+  includeSearchPack: boolean;
+  giftedDepositCount: number;
+  htbIsaCount: number;
+  lifetimeIsaCount: number;
   selectedOptions: string[];
 };
 
@@ -319,6 +324,21 @@ export default function ProceedWithQuoteForm({ quoteData }: Props) {
                     className={`${fieldClasses} cursor-not-allowed bg-ink-900/5`}
                   />
                 </div>
+                {/* Mortgage */}
+                {(quoteData.transactionType === "purchase" || quoteData.transactionType === "sale-purchase") && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">Mortgage</label>
+                    <input readOnly value={quoteData.hasMortgage ? "Yes" : "No"} className={`${fieldClasses} cursor-not-allowed bg-ink-900/5`} />
+                  </div>
+                )}
+
+                {/* Search pack (only shown if no mortgage) */}
+                {(quoteData.transactionType === "purchase" || quoteData.transactionType === "sale-purchase") && !quoteData.hasMortgage && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-600">Search Pack Included</label>
+                    <input readOnly value={quoteData.includeSearchPack ? "Yes" : "No"} className={`${fieldClasses} cursor-not-allowed bg-ink-900/5`} />
+                  </div>
+                )}
                 <div>
                   <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-ink-600">Type</label>
                   <div className="flex gap-6">

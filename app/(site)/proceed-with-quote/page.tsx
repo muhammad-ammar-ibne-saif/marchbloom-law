@@ -7,6 +7,11 @@ type SearchParams = {
   address?: string;
   value?: string;
   leasehold?: string;
+  hasMortgage?: string;
+  includeSearchPack?: string;
+  giftedDepositCount?: string;
+  htbIsaCount?: string;
+  lifetimeIsaCount?: string;
   options?: string;
 };
 
@@ -17,7 +22,14 @@ export default function ProceedWithQuotePage({ searchParams }: { searchParams: S
     transactionAddress: searchParams.address ? decodeURIComponent(searchParams.address) : "",
     transactionValue: searchParams.value ? Number(searchParams.value) : null,
     isLeasehold: searchParams.leasehold === "true",
-    selectedOptions: searchParams.options ? decodeURIComponent(searchParams.options).split(",").filter(Boolean) : [],
+    hasMortgage: searchParams.hasMortgage !== "false",
+    includeSearchPack: searchParams.includeSearchPack !== "false",
+    giftedDepositCount: searchParams.giftedDepositCount ? Number(searchParams.giftedDepositCount) : 0,
+    htbIsaCount: searchParams.htbIsaCount ? Number(searchParams.htbIsaCount) : 0,
+    lifetimeIsaCount: searchParams.lifetimeIsaCount ? Number(searchParams.lifetimeIsaCount) : 0,
+    selectedOptions: searchParams.options
+      ? decodeURIComponent(searchParams.options).split(",").filter(Boolean)
+      : [],
   };
 
   return (

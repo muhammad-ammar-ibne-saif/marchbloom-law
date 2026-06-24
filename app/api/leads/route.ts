@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLead, LeadInput } from "@/lib/leads";
 import { sendLeadNotificationEmail } from "@/lib/email";
-import { DetailedBreakdown, LineItem } from "@/lib/pricing"
 
 const VALID_TYPES = ["purchase", "sale", "sale-purchase", "remortgage", "transfer-of-equity"];
 
@@ -26,56 +25,41 @@ function parseSection(raw: unknown) {
     leaseholdType: parseLeaseholdType(r.leaseholdType),
     peopleInvolved: typeof r.peopleInvolved === "number" ? r.peopleInvolved : 1,
     additionalOptions: Array.isArray(r.additionalOptions) ? r.additionalOptions.map(String) : [],
+    giftedDepositCount: typeof r.giftedDepositCount === "number" ? r.giftedDepositCount : undefined,
+    htbIsaCount: typeof r.htbIsaCount === "number" ? r.htbIsaCount : undefined,
+    lifetimeIsaCount: typeof r.lifetimeIsaCount === "number" ? r.lifetimeIsaCount : undefined,
+    includeSearchPack: typeof r.includeSearchPack === "boolean" ? r.includeSearchPack : undefined,
   };
 }
 
-function parseLineItems(raw: unknown): LineItem[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
-    .map((item) => ({
-      label: String(item.label ?? ""),
-      amount: typeof item.amount === "number" ? item.amount : 0,
-    }));
-}
-
-function parseBreakdown(raw: unknown): DetailedBreakdown | null {
+function parseBreakdown(raw: unknown) {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   return {
     legalFee: typeof r.legalFee === "number" ? r.legalFee : 0,
     legalFeeVat: typeof r.legalFeeVat === "number" ? r.legalFeeVat : 0,
-    leaseholdFee: typeof r.leaseholdFee === "number" ? r.leaseholdFee : 0,
-    leaseholdLabel: typeof r.leaseholdLabel === "string" ? r.leaseholdLabel : null,
-    supplements: parseLineItems(r.supplements),
+    supplements: Array.isArray(r.supplements) ? r.supplements : [],
     supplementsVat: typeof r.supplementsVat === "number" ? r.supplementsVat : 0,
-    unpricedOptions: Array.isArray(r.unpricedOptions) ? r.unpricedOptions.map(String) : [],
-    disbursements: parseLineItems(r.disbursements),
-    sdlt: typeof r.sdlt === "number" ? r.sdlt : null,
+    disbursements: Array.isArray(r.disbursements) ? r.disbursements : [],
+    sdltDeferred: Boolean(r.sdltDeferred),
     subtotal: typeof r.subtotal === "number" ? r.subtotal : 0,
   };
 }
 
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown> & { honeypot?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
+  try { body = await request.json(); }
+  catch { return NextResponse.json({ error: "Invalid request body." }, { status: 400 }); }
 
   if (body.honeypot) return NextResponse.json({ ok: true });
 
   const { firstName, lastName, email, phone, transactionType } = body;
-  if (!firstName || !lastName || !email || !phone || !transactionType) {
+  if (!firstName || !lastName || !email || !phone || !transactionType)
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
-  }
-  if (!isValidEmail(String(email))) {
+  if (!isValidEmail(String(email)))
     return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
-  }
-  if (!VALID_TYPES.includes(String(transactionType))) {
+  if (!VALID_TYPES.includes(String(transactionType)))
     return NextResponse.json({ error: "Invalid transaction type." }, { status: 400 });
-  }
 
   const leadInput: LeadInput = {
     firstName: String(firstName).trim().slice(0, 100),
@@ -90,6 +74,10 @@ export async function POST(request: NextRequest) {
     leaseholdType: parseLeaseholdType(body.leaseholdType),
     peopleInvolved: typeof body.peopleInvolved === "number" ? body.peopleInvolved : 1,
     hasMortgage: typeof body.hasMortgage === "boolean" ? body.hasMortgage : null,
+    includeSearchPack: typeof body.includeSearchPack === "boolean" ? body.includeSearchPack : null,
+    giftedDepositCount: typeof body.giftedDepositCount === "number" ? body.giftedDepositCount : null,
+    htbIsaCount: typeof body.htbIsaCount === "number" ? body.htbIsaCount : null,
+    lifetimeIsaCount: typeof body.lifetimeIsaCount === "number" ? body.lifetimeIsaCount : null,
     remortgageValue: typeof body.remortgageValue === "number" ? body.remortgageValue : null,
     peopleBeingAdded: typeof body.peopleBeingAdded === "number" ? body.peopleBeingAdded : null,
     peopleBeingRemoved: typeof body.peopleBeingRemoved === "number" ? body.peopleBeingRemoved : null,

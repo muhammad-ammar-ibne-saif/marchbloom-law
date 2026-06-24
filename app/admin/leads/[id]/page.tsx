@@ -24,13 +24,7 @@ function leaseholdLabel(isLeasehold: boolean, leaseholdType: string | null) {
       : "Leasehold — under 5 floors (£300)";
 }
 
-function BreakdownBlock({
-  title,
-  breakdown,
-}: {
-  title: string;
-  breakdown: DetailedBreakdown;
-}) {
+function BreakdownBlock({ title, breakdown }: { title: string; breakdown: DetailedBreakdown }) {
   return (
     <div className="overflow-hidden rounded-lg border border-ink-900/8">
       <div className="bg-ink-900 px-4 py-2.5">
@@ -38,73 +32,36 @@ function BreakdownBlock({
       </div>
       <div className="divide-y divide-ink-900/8 bg-bone-100">
         <div className="px-4 py-2">
-          <div className="flex justify-between py-1 text-sm">
-            <dt className="text-ink-600">Legal Fees</dt>
-            <dd className="font-medium text-ink-900">
-              {formatGBP(breakdown.legalFee)}
-            </dd>
-          </div>
-          <div className="flex justify-between py-1 text-sm">
-            <dt className="text-ink-600">Legal Fees VAT at 20%</dt>
-            <dd className="font-medium text-ink-900">
-              {formatGBP(breakdown.legalFeeVat)}
-            </dd>
-          </div>
+          <div className="flex justify-between py-1 text-sm"><dt className="text-ink-600">Legal Fees</dt><dd className="font-medium text-ink-900">{formatGBP(breakdown.legalFee)}</dd></div>
+          <div className="flex justify-between py-1 text-sm"><dt className="text-ink-600">Legal Fees VAT at 20%</dt><dd className="font-medium text-ink-900">{formatGBP(breakdown.legalFeeVat)}</dd></div>
         </div>
         {breakdown.supplements.length > 0 && (
           <div className="px-4 py-2">
+            <p className="pb-1 text-xs font-semibold uppercase tracking-wide text-ink-500">Supplements</p>
             {breakdown.supplements.map((s) => (
-              <div key={s.label} className="flex justify-between py-1 text-sm">
-                <dt className="text-ink-600">{s.label}</dt>
-                <dd className="font-medium text-ink-900">
-                  {formatGBP(s.amount)}
-                </dd>
-              </div>
+              <div key={s.label} className="flex justify-between py-1 text-sm"><dt className="text-ink-600">{s.label}</dt><dd className="font-medium text-ink-900">{formatGBP(s.amount)}</dd></div>
             ))}
-            <div className="flex justify-between py-1 text-sm">
-              <dt className="text-ink-600">VAT at 20%</dt>
-              <dd className="font-medium text-ink-900">
-                {formatGBP(breakdown.supplementsVat)}
-              </dd>
-            </div>
+            <div className="flex justify-between py-1 text-sm"><dt className="text-ink-600">VAT at 20%</dt><dd className="font-medium text-ink-900">{formatGBP(breakdown.supplementsVat)}</dd></div>
           </div>
         )}
         {breakdown.disbursements.length > 0 && (
           <div className="px-4 py-2">
+            <p className="pb-1 text-xs font-semibold uppercase tracking-wide text-ink-500">Disbursements</p>
             {breakdown.disbursements.map((d) => (
-              <div key={d.label} className="flex justify-between py-1 text-sm">
-                <dt className="text-ink-600">{d.label}</dt>
-                <dd className="font-medium text-ink-900">
-                  {formatGBP(d.amount)}
-                </dd>
-              </div>
+              <div key={d.label} className="flex justify-between py-1 text-sm"><dt className="text-ink-600">{d.label}</dt><dd className="font-medium text-ink-900">{formatGBP(d.amount)}</dd></div>
             ))}
           </div>
         )}
-        {breakdown.sdlt !== null && breakdown.sdlt > 0 && (
+        {breakdown.sdltDeferred && (
           <div className="px-4 py-2">
-            <div className="flex justify-between py-1 text-sm">
-              <dt className="text-ink-600">SDLT (estimated)</dt>
-              <dd className="font-medium text-ink-900">
-                {formatGBP(breakdown.sdlt)}
-              </dd>
-            </div>
+            <div className="flex justify-between py-1 text-sm"><dt className="text-ink-600">Stamp Duty (SDLT)</dt><dd className="font-medium text-ink-900">Deferred</dd></div>
           </div>
         )}
         <div className="flex justify-between bg-ink-900/[0.04] px-4 py-2.5">
-          <dt className="font-medium text-ink-900">
-            Total, incl. VAT and disbursements
-          </dt>
-          <dd className="font-display text-base font-semibold text-ink-900">
-            {formatGBP(breakdown.subtotal)}
-          </dd>
+          <dt className="font-medium text-ink-900">Total, incl. VAT and disbursements</dt>
+          <dd className="font-display text-base font-semibold text-ink-900">{formatGBP(breakdown.subtotal)}</dd>
         </div>
       </div>
-      {breakdown.unpricedOptions.length > 0 && (
-        <p className="border-t border-ink-900/8 px-4 py-2 text-xs text-ink-500">
-          Unpriced options selected: {breakdown.unpricedOptions.join(", ")}
-        </p>
-      )}
     </div>
   );
 }

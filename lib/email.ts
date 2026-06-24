@@ -11,14 +11,17 @@ const transactionLabels: Record<string, string> = {
 };
 
 function leaseholdLabel(isLeasehold: boolean, leaseholdType: string | null) {
-  return !isLeasehold ? "Freehold"
-    : leaseholdType === "high-rise" ? "Leasehold — 5+ floors (BSA)"
+  return !isLeasehold
+    ? "Freehold"
+    : leaseholdType === "high-rise"
+    ? "Leasehold — 5+ floors (BSA)"
     : "Leasehold — under 5 floors";
 }
 
 function breakdownTable(label: string, b: DetailedBreakdown): string {
   const rows: string[] = [];
 
+  // Legal fees
   rows.push(`
     <tr><td colspan="2" style="padding:12px 0 4px;font-size:14px;font-weight:700;color:#16261f;">Legal Fees</td></tr>
     <tr>
@@ -26,13 +29,14 @@ function breakdownTable(label: string, b: DetailedBreakdown): string {
       <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(b.legalFee)}</td>
     </tr>
     <tr>
-      <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">VAT at 20%</td>
+      <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">Legal Fees VAT at 20%</td>
       <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(b.legalFeeVat)}</td>
     </tr>
   `);
 
+  // Supplements
   if (b.supplements.length > 0) {
-    rows.push(`<tr><td colspan="2" style="padding:12px 0 4px;font-size:14px;font-weight:700;color:#16261f;">Legal Supplements</td></tr>`);
+    rows.push(`<tr><td colspan="2" style="padding:12px 0 4px;font-size:14px;font-weight:700;color:#16261f;">Supplements</td></tr>`);
     for (const s of b.supplements) {
       rows.push(`
         <tr>
@@ -49,6 +53,7 @@ function breakdownTable(label: string, b: DetailedBreakdown): string {
     `);
   }
 
+  // Disbursements
   if (b.disbursements.length > 0) {
     rows.push(`<tr><td colspan="2" style="padding:12px 0 4px;font-size:14px;font-weight:700;color:#16261f;">Disbursements</td></tr>`);
     for (const d of b.disbursements) {
@@ -61,15 +66,17 @@ function breakdownTable(label: string, b: DetailedBreakdown): string {
     }
   }
 
-  if (b.sdlt !== null && b.sdlt > 0) {
+  // SDLT deferred
+  if (b.sdltDeferred) {
     rows.push(`
       <tr>
-        <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">Stamp Duty Land Tax (estimated)</td>
-        <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">${formatGBP(b.sdlt)}</td>
+        <td style="padding:4px 0;font-size:13px;color:#444;border-bottom:1px solid #eee;">Stamp Duty (SDLT)</td>
+        <td style="padding:4px 0;font-size:13px;color:#444;text-align:right;border-bottom:1px solid #eee;">Deferred</td>
       </tr>
     `);
   }
 
+  // Total
   rows.push(`
     <tr>
       <td style="padding:10px 0;font-size:14px;font-weight:700;color:#16261f;border-top:2px solid #16261f;">Total, including VAT and disbursements</td>
@@ -82,7 +89,6 @@ function breakdownTable(label: string, b: DetailedBreakdown): string {
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
       ${rows.join("")}
     </table>
-    ${b.unpricedOptions.length > 0 ? `<p style="font-size:12px;color:#666;margin-top:8px;">Note: ${b.unpricedOptions.join(", ")} may carry additional fees confirmed on review.</p>` : ""}
   `;
 }
 
@@ -90,7 +96,6 @@ function buildClientEmailHtml(lead: LeadInput): string {
   const txLabel = transactionLabels[lead.transactionType] ?? lead.transactionType;
   const firstName = lead.firstName;
 
-  // Build transaction details section
   let txDetails = "";
   if (lead.transactionType === "sale-purchase") {
     if (lead.saleSection) {
@@ -98,6 +103,7 @@ function buildClientEmailHtml(lead: LeadInput): string {
         <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Address:</strong> ${lead.saleSection.transactionAddress || "—"}</p>
         <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Value:</strong> ${lead.saleSection.propertyValue ? formatGBP(lead.saleSection.propertyValue) : "—"}</p>
         <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Tenure:</strong> ${leaseholdLabel(lead.saleSection.isLeasehold, lead.saleSection.leaseholdType)}</p>
+        ${lead.saleSection.additionalOptions.length ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Options:</strong> ${lead.saleSection.additionalOptions.join(", ")}</p>` : ""}
       `;
     }
     if (lead.purchaseSection) {
@@ -105,6 +111,7 @@ function buildClientEmailHtml(lead: LeadInput): string {
         <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Address:</strong> ${lead.purchaseSection.transactionAddress || "—"}</p>
         <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Value:</strong> ${lead.purchaseSection.propertyValue ? formatGBP(lead.purchaseSection.propertyValue) : "—"}</p>
         <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Tenure:</strong> ${leaseholdLabel(lead.purchaseSection.isLeasehold, lead.purchaseSection.leaseholdType)}</p>
+        ${lead.purchaseSection.additionalOptions.length ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Options:</strong> ${lead.purchaseSection.additionalOptions.join(", ")}</p>` : ""}
       `;
     }
     if (lead.hasMortgage !== null) {
@@ -118,11 +125,13 @@ function buildClientEmailHtml(lead: LeadInput): string {
       ${lead.peopleInvolved ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Number of People Involved:</strong> ${lead.peopleInvolved}</p>` : ""}
       <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Transaction Tenure:</strong> ${leaseholdLabel(lead.isLeasehold, lead.leaseholdType)}</p>
       ${lead.hasMortgage !== null ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Mortgage:</strong> ${lead.hasMortgage ? "Yes" : "No"}</p>` : ""}
-      ${lead.additionalOptions?.length ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Additional Info:</strong> ${lead.additionalOptions.join(", ")}</p>` : ""}
+      ${lead.giftedDepositCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Gifted Deposits:</strong> ${lead.giftedDepositCount}</p>` : ""}
+      ${lead.htbIsaCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Help to Buy ISA:</strong> ${lead.htbIsaCount}</p>` : ""}
+      ${lead.lifetimeIsaCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Lifetime ISA:</strong> ${lead.lifetimeIsaCount}</p>` : ""}
+      ${lead.additionalOptions?.length ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Additional Options:</strong> ${lead.additionalOptions.join(", ")}</p>` : ""}
     `;
   }
 
-  // Build quote section
   let quoteSection = "";
   if (lead.transactionType === "sale-purchase") {
     if (lead.saleBreakdown) quoteSection += breakdownTable("Sale", lead.saleBreakdown);
@@ -150,7 +159,6 @@ function buildClientEmailHtml(lead: LeadInput): string {
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;">
 
-      <!-- Logo header -->
       <tr>
         <td align="center" style="padding:30px 40px 20px;border-bottom:1px solid #eee;">
           <h1 style="margin:0;font-family:Georgia,serif;font-size:28px;font-weight:700;letter-spacing:2px;color:#16261f;">
@@ -160,7 +168,6 @@ function buildClientEmailHtml(lead: LeadInput): string {
         </td>
       </tr>
 
-      <!-- Body -->
       <tr>
         <td style="padding:30px 40px;">
 
@@ -171,7 +178,6 @@ function buildClientEmailHtml(lead: LeadInput): string {
             <a href="https://marchbloomlaw.com" style="color:#16261f;">www.marchbloomlaw.com</a>.
           </p>
 
-          <!-- Nutshell box -->
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f8f8;border-radius:6px;margin-bottom:24px;">
             <tr><td style="padding:20px 24px;">
               <h2 style="margin:0 0 12px;font-size:16px;font-weight:700;color:#16261f;">March &amp; Bloom Law In A Nutshell</h2>
@@ -186,7 +192,6 @@ function buildClientEmailHtml(lead: LeadInput): string {
             </td></tr>
           </table>
 
-          <!-- Discuss CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
             <tr><td align="center">
               <a href="https://marchbloomlaw.com/discuss-quote"
@@ -201,13 +206,11 @@ function buildClientEmailHtml(lead: LeadInput): string {
 
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
 
-          <!-- Transaction details -->
           <h3 style="font-size:15px;font-weight:700;color:#16261f;margin:0 0 12px;">Your Transaction Details:</h3>
           ${txDetails}
 
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
 
-          <!-- Quote breakdown -->
           ${quoteSection}
 
           <p style="margin:20px 0 0;font-size:11px;color:#888;line-height:1.6;">
@@ -216,7 +219,6 @@ function buildClientEmailHtml(lead: LeadInput): string {
 
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
 
-          <!-- Start your conveyancing -->
           <h2 style="font-size:18px;font-weight:700;color:#16261f;margin:0 0 6px;">Start your Conveyancing</h2>
           <p style="margin:0 0 16px;font-size:13px;color:#444;">Click the button below to start your conveyancing</p>
 
@@ -240,7 +242,6 @@ function buildClientEmailHtml(lead: LeadInput): string {
 
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
 
-          <!-- FAQs -->
           <h2 style="font-size:18px;font-weight:700;color:#16261f;margin:0 0 16px;">FAQs</h2>
 
           <h4 style="font-size:13px;font-weight:700;color:#16261f;margin:0 0 6px;">Why is it important to instruct a solicitor as soon as an offer is accepted?</h4>
@@ -262,19 +263,16 @@ function buildClientEmailHtml(lead: LeadInput): string {
 
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
 
-          <!-- No Move No Fee -->
           <h3 style="font-size:15px;font-weight:700;color:#16261f;margin:0 0 8px;">No Move No Fee Policy</h3>
           <p style="margin:0 0 16px;font-size:13px;color:#444;line-height:1.6;">
             March and Bloom Law do not charge you abortive costs should your transaction fall through or be cancelled. Your file is simply placed on hold until you are ready to restart your transaction with a new property to purchase or a new buyer for your sale. Please contact our team using the details below once you are ready to restart your transaction. Please Note: The No Move No Fee Policy does not apply in cases where the transaction does not go through due to a personal change in circumstances forcing you to pull out, or if you wish to change to an alternative property as you have decided you do not wish to continue with the current property purchase, or where you have not secured lending (if required). In such cases, the firm's standard abortive fees will be charged for works carried out.
           </p>
 
-          <!-- Additional charges -->
           <h3 style="font-size:15px;font-weight:700;color:#16261f;margin:0 0 8px;">Are there any additional charges?</h3>
           <p style="margin:0 0 16px;font-size:13px;color:#444;line-height:1.6;">
             Your legal fee is based on the standard transaction outlined in your quote and assumes that the information provided at the outset is accurate and complete. The initial fixed legal fee is calculated using the details supplied to us when generating your quote. During the course of the transaction, additional costs may arise if further legal work becomes necessary or if the nature of the transaction changes that we were not aware of at the quote stage. Accepting this estimate does not constitute a fixed-fee agreement. It is therefore important that the information you provide at this stage is accurate and complete, as it forms the basis of your quotation. This is standard practice across any conveyancing firm.
           </p>
 
-          <!-- Final CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
             <tr><td align="center">
               <a href="https://marchbloomlaw.com/proceed-with-quote"
@@ -289,20 +287,13 @@ function buildClientEmailHtml(lead: LeadInput): string {
         </td>
       </tr>
 
-      <!-- Footer -->
       <tr>
         <td style="padding:24px 40px;border-top:1px solid #eee;background:#f8f8f8;">
           <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#16261f;">March &amp; Bloom Law</p>
-          <p style="margin:0 0 2px;font-size:12px;color:#444;">
-            <a href="tel:02082554186" style="color:#444;text-decoration:none;">020 8255 4186</a>
-          </p>
-          <p style="margin:0 0 2px;font-size:12px;color:#444;">
-            <a href="tel:07889555265" style="color:#444;text-decoration:none;">078 8955 5265</a>
-          </p>
+          <p style="margin:0 0 2px;font-size:12px;color:#444;"><a href="tel:02082554186" style="color:#444;text-decoration:none;">020 8255 4186</a></p>
+          <p style="margin:0 0 2px;font-size:12px;color:#444;"><a href="tel:07889555265" style="color:#444;text-decoration:none;">078 8955 5265</a></p>
           <p style="margin:0 0 12px;font-size:12px;color:#444;">Office Address: 30 Durham Road, Haynes Park, London, SW20 0TW</p>
-          <h2 style="margin:16px 0 4px;font-family:Georgia,serif;font-size:20px;font-weight:700;letter-spacing:2px;color:#16261f;">
-            MARCH<span style="color:#b8963e;">&amp;</span>BLOOM
-          </h2>
+          <h2 style="margin:16px 0 4px;font-family:Georgia,serif;font-size:20px;font-weight:700;letter-spacing:2px;color:#16261f;">MARCH<span style="color:#b8963e;">&amp;</span>BLOOM</h2>
           <p style="margin:0 0 16px;font-size:10px;letter-spacing:4px;color:#16261f;">LAW</p>
           <hr style="border:none;border-top:1px solid #ddd;margin:16px 0;" />
           <p style="margin:0 0 8px;font-size:11px;color:#888;font-weight:700;">Cybercrime Alert:</p>
@@ -344,6 +335,9 @@ function buildInternalEmailHtml(lead: LeadInput): string {
       rows.push(row("Purchase Value", lead.purchaseSection.propertyValue ? formatGBP(lead.purchaseSection.propertyValue) : "—"));
       rows.push(row("Purchase Tenure", leaseholdLabel(lead.purchaseSection.isLeasehold, lead.purchaseSection.leaseholdType)));
       if (lead.purchaseSection.additionalOptions.length) rows.push(row("Purchase Options", lead.purchaseSection.additionalOptions.join(", ")));
+      if (lead.giftedDepositCount) rows.push(row("Gifted Deposits", String(lead.giftedDepositCount)));
+      if (lead.htbIsaCount) rows.push(row("Help to Buy ISA", String(lead.htbIsaCount)));
+      if (lead.lifetimeIsaCount) rows.push(row("Lifetime ISA", String(lead.lifetimeIsaCount)));
     }
     if (lead.hasMortgage !== null) rows.push(row("Mortgage", lead.hasMortgage ? "Yes" : "No"));
     if (lead.combinedTotal !== null) rows.push(row("Combined Total", formatGBP(lead.combinedTotal)));
@@ -353,6 +347,9 @@ function buildInternalEmailHtml(lead: LeadInput): string {
     if (lead.remortgageValue) rows.push(row("Remortgage Value", formatGBP(lead.remortgageValue)));
     rows.push(row("Tenure", leaseholdLabel(lead.isLeasehold, lead.leaseholdType)));
     if (lead.hasMortgage !== null) rows.push(row("Mortgage", lead.hasMortgage ? "Yes" : "No"));
+    if (lead.giftedDepositCount) rows.push(row("Gifted Deposits", String(lead.giftedDepositCount)));
+    if (lead.htbIsaCount) rows.push(row("Help to Buy ISA", String(lead.htbIsaCount)));
+    if (lead.lifetimeIsaCount) rows.push(row("Lifetime ISA", String(lead.lifetimeIsaCount)));
     if (lead.additionalOptions?.length) rows.push(row("Additional Options", lead.additionalOptions.join(", ")));
     if (lead.singleBreakdown) rows.push(row("Quote Total", formatGBP(lead.singleBreakdown.subtotal)));
   }
@@ -384,7 +381,6 @@ export async function sendLeadNotificationEmail(lead: LeadInput): Promise<void> 
   try {
     const resend = new Resend(apiKey);
 
-    // 1. Email to the client with the full branded template
     await resend.emails.send({
       from,
       to: lead.email,
@@ -393,7 +389,6 @@ export async function sendLeadNotificationEmail(lead: LeadInput): Promise<void> 
       html: buildClientEmailHtml(lead),
     });
 
-    // 2. Internal notification email to the firm
     await resend.emails.send({
       from,
       to: notificationTo,

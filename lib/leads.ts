@@ -12,6 +12,10 @@ export type PropertySection = {
   leaseholdType: LeaseholdType | null;
   peopleInvolved: number;
   additionalOptions: string[];
+  giftedDepositCount?: number;
+  htbIsaCount?: number;
+  lifetimeIsaCount?: number;
+  includeSearchPack?: boolean;
 };
 
 export type Lead = {
@@ -28,6 +32,10 @@ export type Lead = {
   leaseholdType: LeaseholdType | null;
   peopleInvolved: number;
   hasMortgage: boolean | null;
+  includeSearchPack: boolean | null;
+  giftedDepositCount: number | null;
+  htbIsaCount: number | null;
+  lifetimeIsaCount: number | null;
   remortgageValue: number | null;
   peopleBeingAdded: number | null;
   peopleBeingRemoved: number | null;
@@ -84,11 +92,7 @@ export async function listLeads(filters: LeadFilters = {}) {
   if (dateFrom || dateTo) {
     const createdAt: Record<string, Date> = {};
     if (dateFrom) createdAt.$gte = new Date(dateFrom);
-    if (dateTo) {
-      const end = new Date(dateTo);
-      end.setHours(23, 59, 59, 999);
-      createdAt.$lte = end;
-    }
+    if (dateTo) { const end = new Date(dateTo); end.setHours(23, 59, 59, 999); createdAt.$lte = end; }
     query.createdAt = createdAt;
   }
 
