@@ -313,56 +313,155 @@ function buildClientEmailHtml(lead: LeadInput): string {
 
 function buildInternalEmailHtml(lead: LeadInput): string {
   const txLabel = transactionLabels[lead.transactionType] ?? lead.transactionType;
-  const rows: string[] = [];
 
-  const row = (label: string, value: string) =>
-    `<tr><td style="padding:5px 12px;color:#5c6b62;font-size:13px;width:40%;">${label}</td><td style="padding:5px 12px;font-weight:600;color:#16261f;font-size:13px;">${value}</td></tr>`;
-
-  rows.push(row("Name", `${lead.firstName} ${lead.lastName}`));
-  rows.push(row("Email", lead.email));
-  rows.push(row("Phone", lead.phone));
-  rows.push(row("Transaction", txLabel));
-
+  let txDetails = "";
   if (lead.transactionType === "sale-purchase") {
     if (lead.saleSection) {
-      rows.push(row("Sale Address", lead.saleSection.transactionAddress || "—"));
-      rows.push(row("Sale Value", lead.saleSection.propertyValue ? formatGBP(lead.saleSection.propertyValue) : "—"));
-      rows.push(row("Sale Tenure", leaseholdLabel(lead.saleSection.isLeasehold, lead.saleSection.leaseholdType)));
-      if (lead.saleSection.additionalOptions.length) rows.push(row("Sale Options", lead.saleSection.additionalOptions.join(", ")));
+      txDetails += `
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Address:</strong> ${lead.saleSection.transactionAddress || "—"}</p>
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Value:</strong> ${lead.saleSection.propertyValue ? formatGBP(lead.saleSection.propertyValue) : "—"}</p>
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Tenure:</strong> ${leaseholdLabel(lead.saleSection.isLeasehold, lead.saleSection.leaseholdType)}</p>
+        ${lead.saleSection.additionalOptions.length ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Sale Options:</strong> ${lead.saleSection.additionalOptions.join(", ")}</p>` : ""}
+      `;
     }
     if (lead.purchaseSection) {
-      rows.push(row("Purchase Address", lead.purchaseSection.transactionAddress || "—"));
-      rows.push(row("Purchase Value", lead.purchaseSection.propertyValue ? formatGBP(lead.purchaseSection.propertyValue) : "—"));
-      rows.push(row("Purchase Tenure", leaseholdLabel(lead.purchaseSection.isLeasehold, lead.purchaseSection.leaseholdType)));
-      if (lead.purchaseSection.additionalOptions.length) rows.push(row("Purchase Options", lead.purchaseSection.additionalOptions.join(", ")));
-      if (lead.giftedDepositCount) rows.push(row("Gifted Deposits", String(lead.giftedDepositCount)));
-      if (lead.htbIsaCount) rows.push(row("Help to Buy ISA", String(lead.htbIsaCount)));
-      if (lead.lifetimeIsaCount) rows.push(row("Lifetime ISA", String(lead.lifetimeIsaCount)));
+      txDetails += `
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Address:</strong> ${lead.purchaseSection.transactionAddress || "—"}</p>
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Value:</strong> ${lead.purchaseSection.propertyValue ? formatGBP(lead.purchaseSection.propertyValue) : "—"}</p>
+        <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Tenure:</strong> ${leaseholdLabel(lead.purchaseSection.isLeasehold, lead.purchaseSection.leaseholdType)}</p>
+        ${lead.purchaseSection.additionalOptions.length ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Purchase Options:</strong> ${lead.purchaseSection.additionalOptions.join(", ")}</p>` : ""}
+        ${lead.giftedDepositCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Gifted Deposits:</strong> ${lead.giftedDepositCount}</p>` : ""}
+        ${lead.htbIsaCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Help to Buy ISAs:</strong> ${lead.htbIsaCount}</p>` : ""}
+        ${lead.lifetimeIsaCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Lifetime ISAs:</strong> ${lead.lifetimeIsaCount}</p>` : ""}
+      `;
     }
-    if (lead.hasMortgage !== null) rows.push(row("Mortgage", lead.hasMortgage ? "Yes" : "No"));
-    if (lead.combinedTotal !== null) rows.push(row("Combined Total", formatGBP(lead.combinedTotal)));
+    if (lead.hasMortgage !== null) {
+      txDetails += `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Mortgage:</strong> ${lead.hasMortgage ? "Yes" : "No"}</p>`;
+    }
   } else {
-    if (lead.transactionAddress) rows.push(row("Address", lead.transactionAddress));
-    if (lead.propertyValue) rows.push(row("Property Value", formatGBP(lead.propertyValue)));
-    if (lead.remortgageValue) rows.push(row("Remortgage Value", formatGBP(lead.remortgageValue)));
-    rows.push(row("Tenure", leaseholdLabel(lead.isLeasehold, lead.leaseholdType)));
-    if (lead.hasMortgage !== null) rows.push(row("Mortgage", lead.hasMortgage ? "Yes" : "No"));
-    if (lead.giftedDepositCount) rows.push(row("Gifted Deposits", String(lead.giftedDepositCount)));
-    if (lead.htbIsaCount) rows.push(row("Help to Buy ISA", String(lead.htbIsaCount)));
-    if (lead.lifetimeIsaCount) rows.push(row("Lifetime ISA", String(lead.lifetimeIsaCount)));
-    if (lead.additionalOptions?.length) rows.push(row("Additional Options", lead.additionalOptions.join(", ")));
-    if (lead.singleBreakdown) rows.push(row("Quote Total", formatGBP(lead.singleBreakdown.subtotal)));
+    txDetails = `
+      <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Transaction Type:</strong> ${txLabel}</p>
+      ${lead.transactionAddress ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Address:</strong> ${lead.transactionAddress}</p>` : ""}
+      ${lead.propertyValue ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Property Value:</strong> ${formatGBP(lead.propertyValue)}</p>` : ""}
+      ${lead.peopleInvolved ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>People Involved:</strong> ${lead.peopleInvolved}</p>` : ""}
+      <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Tenure:</strong> ${leaseholdLabel(lead.isLeasehold, lead.leaseholdType)}</p>
+      ${lead.hasMortgage !== null ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Mortgage:</strong> ${lead.hasMortgage ? "Yes" : "No"}</p>` : ""}
+      ${lead.includeSearchPack !== null && lead.hasMortgage === false ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Search Pack Included:</strong> ${lead.includeSearchPack ? "Yes" : "No"}</p>` : ""}
+      ${lead.giftedDepositCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Gifted Deposits:</strong> ${lead.giftedDepositCount}</p>` : ""}
+      ${lead.htbIsaCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Help to Buy ISAs:</strong> ${lead.htbIsaCount}</p>` : ""}
+      ${lead.lifetimeIsaCount ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Lifetime ISAs:</strong> ${lead.lifetimeIsaCount}</p>` : ""}
+      ${lead.additionalOptions?.length ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Additional Options:</strong> ${lead.additionalOptions.join(", ")}</p>` : ""}
+      ${lead.remortgageValue ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>Remortgage Value:</strong> ${formatGBP(lead.remortgageValue)}</p>` : ""}
+      ${lead.peopleBeingAdded !== null ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>People Being Added:</strong> ${lead.peopleBeingAdded}</p>` : ""}
+      ${lead.peopleBeingRemoved !== null ? `<p style="margin:4px 0;font-size:13px;color:#444;"><strong>People Being Removed:</strong> ${lead.peopleBeingRemoved}</p>` : ""}
+    `;
   }
 
-  if (lead.message) rows.push(row("Message", lead.message));
+  let quoteSection = "";
+  if (lead.transactionType === "sale-purchase") {
+    if (lead.saleBreakdown) quoteSection += breakdownTable("Sale", lead.saleBreakdown);
+    if (lead.purchaseBreakdown) quoteSection += breakdownTable("Purchase", lead.purchaseBreakdown);
+    if (lead.combinedTotal !== null) {
+      quoteSection += `
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:16px;">
+          <tr>
+            <td style="padding:10px 0;font-size:15px;font-weight:700;color:#16261f;border-top:2px solid #16261f;">Combined Total</td>
+            <td style="padding:10px 0;font-size:15px;font-weight:700;color:#16261f;text-align:right;border-top:2px solid #16261f;">${formatGBP(lead.combinedTotal)}</td>
+          </tr>
+        </table>
+      `;
+    }
+  } else if (lead.singleBreakdown) {
+    quoteSection = breakdownTable(txLabel, lead.singleBreakdown);
+  }
 
   return `
-    <div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
-      <h2 style="color:#16261f;">New quote enquiry — ${lead.firstName} ${lead.lastName}</h2>
-      <table style="width:100%;border-collapse:collapse;background:#f9f9f9;border-radius:6px;">
-        ${rows.join("")}
-      </table>
-    </div>
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:20px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;">
+
+      <!-- Logo header -->
+      <tr>
+        <td align="center" style="padding:30px 40px 20px;border-bottom:1px solid #eee;">
+          <h1 style="margin:0;font-family:Georgia,serif;font-size:28px;font-weight:700;letter-spacing:2px;color:#16261f;">
+            MARCH<span style="color:#b8963e;">&amp;</span>BLOOM
+          </h1>
+          <p style="margin:4px 0 0;font-size:13px;letter-spacing:4px;color:#16261f;">LAW</p>
+          <p style="margin:12px 0 0;font-size:12px;font-weight:700;color:#b8963e;letter-spacing:1px;text-transform:uppercase;">⚡ New Quote Enquiry</p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding:30px 40px;">
+
+          <p style="margin:0 0 16px;font-size:14px;color:#333;line-height:1.6;">
+            A new quote has been generated on <strong>marchbloomlaw.com</strong>. Full details are below.
+          </p>
+
+          <!-- Client details box -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f0;border-radius:6px;margin-bottom:24px;">
+            <tr><td style="padding:20px 24px;">
+              <h2 style="margin:0 0 12px;font-size:15px;font-weight:700;color:#16261f;">Client Details</h2>
+              <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Name:</strong> ${lead.firstName} ${lead.lastName}</p>
+              <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Email:</strong> <a href="mailto:${lead.email}" style="color:#16261f;">${lead.email}</a></p>
+              <p style="margin:4px 0;font-size:13px;color:#444;"><strong>Phone:</strong> <a href="tel:${lead.phone}" style="color:#16261f;">${lead.phone}</a></p>
+              ${lead.message ? `<p style="margin:8px 0 0;font-size:13px;color:#444;"><strong>Message:</strong> ${lead.message}</p>` : ""}
+            </td></tr>
+          </table>
+
+          <!-- Reply CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr><td align="center">
+              <a href="mailto:${lead.email}"
+                style="display:inline-block;background:#16261f;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:14px 36px;border-radius:4px;letter-spacing:0.5px;">
+                Reply to ${lead.firstName}
+              </a>
+            </td></tr>
+          </table>
+
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+
+          <!-- Transaction details -->
+          <h3 style="font-size:15px;font-weight:700;color:#16261f;margin:0 0 12px;">Transaction Details</h3>
+          ${txDetails}
+
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+
+          <!-- Quote breakdown -->
+          <h3 style="font-size:15px;font-weight:700;color:#16261f;margin:0 0 12px;">Quote Shown to Client</h3>
+          ${quoteSection}
+
+          <p style="margin:20px 0 0;font-size:11px;color:#888;line-height:1.6;">
+            This quote was generated automatically based on the information provided by the client.
+          </p>
+
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style="padding:24px 40px;border-top:1px solid #eee;background:#f8f8f8;">
+          <h2 style="margin:0 0 4px;font-family:Georgia,serif;font-size:20px;font-weight:700;letter-spacing:2px;color:#16261f;">
+            MARCH<span style="color:#b8963e;">&amp;</span>BLOOM
+          </h2>
+          <p style="margin:0 0 12px;font-size:10px;letter-spacing:4px;color:#16261f;">LAW</p>
+          <p style="margin:0;font-size:11px;color:#888;line-height:1.6;">
+            This is an automated notification from the March &amp; Bloom Law website quote system.
+            Do not reply to this email — use the "Reply to ${lead.firstName}" button above to contact the client directly.
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>
   `;
 }
 
@@ -402,4 +501,3 @@ export async function sendLeadNotificationEmail(lead: LeadInput): Promise<void> 
   }
 }
 
-// fjr
