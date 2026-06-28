@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState, ChangeEvent } from "react";
-import {
-  formatCompact,
-  formatNumberWithCommas,
-  parseCompactNumber,
-} from "@/lib/pricing";
+import { formatNumberWithCommas, parseCompactNumber } from "@/lib/pricing";
 
 type CurrencyInputProps = {
   value: number;
@@ -18,7 +14,7 @@ type CurrencyInputProps = {
 export default function CurrencyInput({
   value,
   onChange,
-  placeholder = "e.g. 350000",
+  placeholder = "e.g. 350,000",
   className = "",
   required,
 }: CurrencyInputProps) {
@@ -26,7 +22,7 @@ export default function CurrencyInput({
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
-    if (!focused) setDisplay(value > 0 ? formatCompact(value) : "");
+    if (!focused) setDisplay(value > 0 ? formatNumberWithCommas(value) : "");
   }, [value, focused]);
 
   function handleFocus() {
@@ -36,7 +32,7 @@ export default function CurrencyInput({
 
   function handleBlur() {
     setFocused(false);
-    setDisplay(value > 0 ? formatCompact(value) : "");
+    setDisplay(value > 0 ? formatNumberWithCommas(value) : "");
   }
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
@@ -47,9 +43,7 @@ export default function CurrencyInput({
 
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-400">
-        £
-      </span>
+      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-400">£</span>
       <input
         type="text"
         inputMode="numeric"

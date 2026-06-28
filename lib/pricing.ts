@@ -103,8 +103,10 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
     }
 
     // Disbursements
-    disbursements.push({ label: "Bank Transfer Fee",        amount: 36 });
-    disbursements.push({ label: "Office Copy (per document)", amount: 3 });
+   disbursements.push({ label: "Bank Transfer Fee",        amount: 36 });
+    disbursements.push({ label: "ID Verification",          amount: 30 });
+    disbursements.push({ label: "Case Management Fee",      amount: 30 });
+    disbursements.push({ label: "Office Copy (per document)", amount: 7 });
 
   // ── PURCHASE ──────────────────────────────────────────────────────────────
   } else if (type === "purchase") {
@@ -164,9 +166,10 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
     }
 
     // Disbursements
-    disbursements.push({ label: "Bank Transfer Fee",    amount: 36 });
-    disbursements.push({ label: "Case Management Fee",  amount: 30 });
-    disbursements.push({ label: "HMLR Search",          amount: 7  });
+   disbursements.push({ label: "Bank Transfer Fee",    amount: 36  });
+    disbursements.push({ label: "ID Verification",      amount: 30  });
+    disbursements.push({ label: "Case Management Fee",  amount: 30  });
+    disbursements.push({ label: "HMLR Search",          amount: 7   });
     if (hasMortgage || includeSearchPack) {
       disbursements.push({
         label: "Searches Pack (Local Authority, Drainage & Water, Environmental Searches)",
@@ -193,8 +196,9 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
       if (remortgageMap[opt] !== undefined) supplements.push({ label: opt, amount: remortgageMap[opt] });
     }
 
-    disbursements.push({ label: "HMLR Official Copy of Register (per document)", amount: 3   });
+    disbursements.push({ label: "HMLR Official Copy of Register (per document)", amount: 7   });
     disbursements.push({ label: "Bank Transfer Fee",                              amount: 36  });
+    disbursements.push({ label: "ID Verification",                                amount: 30  });
     disbursements.push({ label: "Case Management Fee",                            amount: 30  });
     disbursements.push({ label: "HMLR Official Search",                           amount: 7   });
     disbursements.push({ label: "HMLR Bankruptcy Search",                         amount: 6   });
@@ -211,10 +215,12 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
     }
 
     const amlPeople = Math.max(peopleInvolved, 1);
-    disbursements.push({ label: "File Opening Fee",                                          amount: 50           });
-    disbursements.push({ label: `AML Check (${amlPeople} x £30 each)`,                      amount: amlPeople * 30 });
-    disbursements.push({ label: "Office Copies",                                             amount: 6            });
-    disbursements.push({ label: "Land Registry Fees",                                        amount: 295          });
+   disbursements.push({ label: "File Opening Fee",                              amount: 50           });
+    disbursements.push({ label: "ID Verification",                               amount: 30           });
+    disbursements.push({ label: "Case Management Fee",                           amount: 30           });
+    disbursements.push({ label: `AML Check (${amlPeople} x £30 each)`,          amount: amlPeople * 30 });
+    disbursements.push({ label: "Office Copies",                                 amount: 7            });
+    disbursements.push({ label: "Land Registry Fees",                            amount: 295          });
   }
 
   const supplementsSubtotal = supplements.reduce((sum, s) => sum + s.amount, 0);
