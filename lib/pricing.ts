@@ -208,7 +208,7 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
   // ── TRANSFER OF EQUITY ────────────────────────────────────────────────────
   } else if (type === "transfer-of-equity") {
     const toeMap: Record<string, number> = {
-      "Shared Ownership": 150,
+      "Shared Ownership": 150, 
     };
     for (const opt of selectedOptions) {
       if (toeMap[opt] !== undefined) supplements.push({ label: opt, amount: toeMap[opt] });
