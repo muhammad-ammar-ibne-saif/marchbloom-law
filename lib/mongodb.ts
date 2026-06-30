@@ -6,32 +6,32 @@ const globalForMongo = global as typeof globalThis & {
 
 let clientPromise: Promise<MongoClient> | undefined;
 
-/**
- * Lazily creates (or reuses, in dev, across hot reloads) a MongoClient
- * connection. Deliberately does NOT read process.env.MONGODB_URI at module
- * scope — Next.js imports route files to inspect their config at build
- * time, and throwing at import time would break `next build` in any
- * environment where the env var isn't set yet (e.g. CI before secrets are
- * configured).
- */
+const options = {
+  serverSelectionTimeoutMS: 10000,
+  connectTimeoutMS: 10000,
+  socketTimeoutMS: 10000,
+};
+
 function getClientPromise(): Promise<MongoClient> {
   const uri = process.env.MONGODB_URI;
+
   if (!uri) {
-    throw new Error(
-      "Missing MONGODB_URI environment variable. Set it in .env.local (see .env.example)."
-    );
+    console.error("[mongodb] MONGODB_URI is not set");
+    throw new Error("Missing MONGODB_URI environment variable.");
   }
+
+  console.log("[mongodb] Connecting, NODE_ENV:", process.env.NODE_ENV);
 
   if (process.env.NODE_ENV === "development") {
     if (!globalForMongo._mongoClientPromise) {
-      const client = new MongoClient(uri);
+      const client = new MongoClient(uri, options);
       globalForMongo._mongoClientPromise = client.connect();
     }
     return globalForMongo._mongoClientPromise;
   }
 
   if (!clientPromise) {
-    const client = new MongoClient(uri);
+    const client = new MongoClient(uri, options);
     clientPromise = client.connect();
   }
   return clientPromise;
@@ -39,5 +39,7 @@ function getClientPromise(): Promise<MongoClient> {
 
 export async function getDb(): Promise<Db> {
   const client = await getClientPromise();
-  return client.db(process.env.MONGODB_DB_NAME || "marchbloom");
+  const dbName = process.env.MONGODB_DB_NAME || "marchbloom";
+  console.log("[mongodb] Connected, using db:", dbName);
+  return client.db(dbName);
 }
