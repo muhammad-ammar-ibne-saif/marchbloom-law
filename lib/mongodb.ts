@@ -38,8 +38,16 @@ function getClientPromise(): Promise<MongoClient> {
 }
 
 export async function getDb(): Promise<Db> {
-  const client = await getClientPromise();
-  const dbName = process.env.MONGODB_DB_NAME || "marchbloom";
-  console.log("[mongodb] Connected, using db:", dbName);
-  return client.db(dbName);
+  console.log("[mongodb] getDb called");
+  try {
+    const client = await getClientPromise();
+    console.log("[mongodb] client connected");
+    const dbName = process.env.MONGODB_DB_NAME || "marchbloom";
+    const db = client.db(dbName);
+    console.log("[mongodb] db selected:", dbName);
+    return db;
+  } catch (err) {
+    console.error("[mongodb] connection failed:", err);
+    throw err;
+  }
 }
