@@ -51,10 +51,7 @@ export async function POST(request: NextRequest) {
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid request body." }, { status: 400 }); }
 
- if (body.honeypot && String(body.honeypot).trim().length > 0) {
-  console.log("[api/leads] Honeypot triggered:", body.honeypot);
-  return NextResponse.json({ ok: true });
-}
+ if (body.honeypot) return NextResponse.json({ ok: true });
 
   const { firstName, lastName, email, phone, transactionType } = body;
   if (!firstName || !lastName || !email || !phone || !transactionType)
