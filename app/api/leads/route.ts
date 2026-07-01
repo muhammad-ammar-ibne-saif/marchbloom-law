@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     const lead = await createLead(leadInput);
     console.log("[api/leads] lead created:", lead._id.toString());
     console.log("[api/leads] sending email");
-    void sendLeadNotificationEmail(leadInput);
+    void sendLeadNotificationEmail(leadInput); 
     console.log("[api/leads] done");
     return NextResponse.json({ ok: true, id: lead._id.toString() });
   } catch (err) {
