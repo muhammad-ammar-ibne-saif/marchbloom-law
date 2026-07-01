@@ -629,7 +629,7 @@ function buildProceedUrl() {
     const payload = {
       firstName: formData.get("firstName"), lastName: formData.get("lastName"),
       phone: formData.get("phone"), email: formData.get("email"),
-      message: formData.get("message") || "", honeypot: formData.get("company"),
+      message: formData.get("message") || "", honeypot: (document.getElementById("company_trap") as HTMLInputElement)?.value || "",
       transactionType: type,
       transactionAddress: type === "remortgage" ? remortgageAddress : type === "transfer-of-equity" ? toeAddress : "",
       addressUnknown: type === "remortgage" ? remortgageAddressUnknown : type === "transfer-of-equity" ? toeAddressUnknown : false,
@@ -794,7 +794,7 @@ function buildProceedUrl() {
             <h3 className="font-display text-xl text-ink-900">Your details</h3>
             <p className="mt-1 text-sm text-ink-600">We need these before we can show your quote — a solicitor will confirm it by email within one working day.</p>
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <input type="text" name="company" tabIndex={-1} autoComplete="off" className="absolute h-0 w-0 opacity-0" aria-hidden="true" />
+              <input type="text" id="company_trap" tabIndex={-1} autoComplete="off" className="absolute h-0 w-0 opacity-0" aria-hidden="true" />
               <div className="grid gap-4 sm:grid-cols-2">
                 <input name="firstName" required placeholder="First name" className={fieldClasses} />
                 <input name="lastName"  required placeholder="Last name"  className={fieldClasses} />
