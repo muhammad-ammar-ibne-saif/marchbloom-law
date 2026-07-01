@@ -46,6 +46,15 @@ function parseBreakdown(raw: unknown) {
   };
 }
 
+console.log("[api/leads] ENV CHECK:", {
+  hasMongoUri: !!process.env.MONGODB_URI,
+  hasDbName: !!process.env.MONGODB_DB_NAME,
+  hasResend: !!process.env.RESEND_API_KEY,
+  hasFrom: !!process.env.RESEND_FROM_EMAIL,
+  hasTo: !!process.env.LEAD_NOTIFICATION_EMAIL,
+  nodeEnv: process.env.NODE_ENV,
+});
+
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown> & { honeypot?: string };
   try { body = await request.json(); }
