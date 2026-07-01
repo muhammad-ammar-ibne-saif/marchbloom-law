@@ -112,11 +112,9 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
   } else if (type === "purchase") {
     sdltDeferred = true;
 
-    // Auto supplements
     supplements.push({ label: "File Opening Fee", amount: 50 });
     if (hasMortgage) supplements.push({ label: "Mortgage Handling Fee", amount: 100 });
 
-    // Leasehold
     if (isLeasehold) {
       supplements.push({ label: "Leasehold Fee", amount: 300 });
       if (leaseholdType === "high-rise") {
@@ -126,19 +124,22 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
 
     // Selectable supplements
     const purchaseMap: Record<string, number> = {
-      "2nd Home or Buy To Let":    50,
-      "New Build Legal Work Fee":  300,
-      "Shared Ownership":          250,
-      "Right To Buy":              200,
+      "2nd Home or Buy To Let":     50,
+      "New Build Legal Work Fee":   300,
+      "Shared Ownership":           250,
+      "Right To Buy":               200,
       "Buying via Limited Company": 100,
-      "Declaration of Trust":      150,
-      "Unregistered":              350,
-      "Share of Freehold":         200,
-      "Auction Pack Review":       450,
+      "Declaration of Trust":       150,
+      "Unregistered":               350,
+      "Share of Freehold":          200,
+      "Auction Pack Review":        450,
     };
 
+
     for (const opt of selectedOptions) {
-      if (opt === "Gifted Deposit") {
+      if (opt === "Buying First Home") {
+        // SDLT relief only — no supplement fee
+      } else if (opt === "Gifted Deposit") {
         if (giftedDepositCount > 0) {
           supplements.push({
             label: `Gifted Deposit (${giftedDepositCount} gift${giftedDepositCount > 1 ? "s" : ""} x £150 each)`,
@@ -162,33 +163,44 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
       } else if (purchaseMap[opt] !== undefined) {
         supplements.push({ label: opt, amount: purchaseMap[opt] });
       }
-      // "Buying First Home" — SDLT relief only, no supplement fee
     }
 
     // Disbursements
-   disbursements.push({ label: "Bank Transfer Fee",    amount: 36  });
-    disbursements.push({ label: "ID Verification",      amount: 30  });
-    disbursements.push({ label: "Case Management Fee",  amount: 30  });
-    disbursements.push({ label: "HMLR Search",          amount: 7   });
-    if (hasMortgage || includeSearchPack) {
+    disbursements.push({ label: "Bank Transfer Fee",   amount: 36 });
+    disbursements.push({ label: "ID Verification",     amount: 30 });
+    disbursements.push({ label: "Case Management Fee", amount: 30 });
+    disbursements.push({ label: "HMLR Search",         amount: 7  });
+
+
+    // Searches pack ONLY when no mortgage AND user opted in
+    if (!hasMortgage && includeSearchPack) {
       disbursements.push({
         label: "Searches Pack (Local Authority, Drainage & Water, Environmental Searches)",
         amount: 250,
       });
     }
+
     disbursements.push({
       label: `Bankruptcy Searches (${peopleInvolved} search${peopleInvolved > 1 ? "es" : ""} x £6 each)`,
       amount: peopleInvolved * 6,
     });
-    disbursements.push({ label: "Lawyer Checker",      amount: 20 });
-    disbursements.push({ label: "Land Registry Fees",  amount: 95 });
+    disbursements.push({ label: "Lawyer Checker",       amount: 20 });
+    disbursements.push({ label: "Land Registry Fees",   amount: 95 });
 
   // ── REMORTGAGE ────────────────────────────────────────────────────────────
-  } else if (type === "remortgage") {
+  }  else if (type === "remortgage") {
     supplements.push({ label: "File Opening Fee", amount: 50 });
 
-    const remortgageMap: Record<string, number> = {
-      "Buy To Let":       50,
+    // Leasehold supplement for remortgage
+    if (isLeasehold) {
+      supplements.push({ label: "Leasehold Fee", amount: 300 });
+      if (leaseholdType === "high-rise") {
+        supplements.push({ label: "Building Safety Act Fee", amount: 150 });
+      }
+    }
+
+     const remortgageMap: Record<string, number> = {
+      "Buy To Let":        50,
       "Share of Freehold": 200,
       "Client is Company": 100,
     };
@@ -205,22 +217,30 @@ export function calculateBreakdown(type: SingleTransactionType, input: Breakdown
     disbursements.push({ label: "Searches",                                       amount: 250 });
     disbursements.push({ label: "Land Registry Fees",                             amount: 20  });
 
+
   // ── TRANSFER OF EQUITY ────────────────────────────────────────────────────
   } else if (type === "transfer-of-equity") {
-    const toeMap: Record<string, number> = {
-      "Shared Ownership": 150, 
+    // Leasehold supplement for TOE
+    if (isLeasehold) {
+      supplements.push({ label: "Leasehold Fee", amount: 300 });
+      if (leaseholdType === "high-rise") {
+        supplements.push({ label: "Building Safety Act Fee", amount: 150 });
+      }
+    }
+     const toeMap: Record<string, number> = {
+      "Shared Ownership": 150,
     };
     for (const opt of selectedOptions) {
       if (toeMap[opt] !== undefined) supplements.push({ label: opt, amount: toeMap[opt] });
     }
 
     const amlPeople = Math.max(peopleInvolved, 1);
-   disbursements.push({ label: "File Opening Fee",                              amount: 50           });
-    disbursements.push({ label: "ID Verification",                               amount: 30           });
-    disbursements.push({ label: "Case Management Fee",                           amount: 30           });
+    disbursements.push({ label: "File Opening Fee",                              amount: 50             });
+    disbursements.push({ label: "ID Verification",                               amount: 30             });
+    disbursements.push({ label: "Case Management Fee",                           amount: 30             });
     disbursements.push({ label: `AML Check (${amlPeople} x £30 each)`,          amount: amlPeople * 30 });
-    disbursements.push({ label: "Office Copies",                                 amount: 7            });
-    disbursements.push({ label: "Land Registry Fees",                            amount: 295          });
+    disbursements.push({ label: "Office Copies",                                 amount: 7              });
+    disbursements.push({ label: "Land Registry Fees",                            amount: 295            });
   }
 
   const supplementsSubtotal = supplements.reduce((sum, s) => sum + s.amount, 0);

@@ -482,6 +482,7 @@ export default function InstantQuote() {
   const [remortgagePropValue, setRemortgagePropValue] = useState(0);
   const [remortgagePeople, setRemortgagePeople] = useState(1);
   const [remortgageLeasehold, setRemortgageLeasehold] = useState(false);
+  const [remortgageLeaseholdType, setRemortgageLeaseholdType] = useState<LeaseholdType>("standard"); // ADD THIS
   const [remortgageOptions, setRemortgageOptions] = useState<string[]>([]);
 
   // Transfer of Equity
@@ -491,8 +492,10 @@ export default function InstantQuote() {
   const [toePeopleAdded, setToePeopleAdded] = useState(0);
   const [toePeopleRemoved, setToePeopleRemoved] = useState(0);
   const [toeLeasehold, setToeLeasehold] = useState(false);
+  const [toeLeaseholdType, setToeLeaseholdType] = useState<LeaseholdType>("standard"); // ADD THIS
   const [toeOptions, setToeOptions] = useState<string[]>([]);
   const [toePeople, setToePeople] = useState(1);
+
 
   // Submit state
   const [submitting, setSubmitting] = useState(false);
@@ -556,6 +559,8 @@ function buildProceedUrl() {
     setToeAddress(""); setToeAddressUnknown(false); setToePropValue(0); setToePeopleAdded(0); setToePeopleRemoved(0); setToeLeasehold(false); setToeOptions([]); setToePeople(1);
     setSubmitError(null); setLeadId(null);
     setResultSaleBreakdown(null); setResultPurchaseBreakdown(null); setResultSingleBreakdown(null); setResultCombinedTotal(null);
+    setRemortgageLeaseholdType("standard");
+    setToeLeaseholdType("standard");
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -611,16 +616,19 @@ function buildProceedUrl() {
         selectedOptions: purchaseOptions, peopleInvolved: purchasePeople,
         giftedDepositCount, htbIsaCount, lifetimeIsaCount,
       });
-    } else if (type === "remortgage") {
+    }  else if (type === "remortgage") {
       singleBreakdown = calculateBreakdown("remortgage", {
-        propertyValue: remortgagePropValue, isLeasehold: remortgageLeasehold,
-        leaseholdType: null, selectedOptions: remortgageOptions, peopleInvolved: remortgagePeople,
+        propertyValue: remortgagePropValue,
+        isLeasehold: remortgageLeasehold,
+        leaseholdType: remortgageLeasehold ? remortgageLeaseholdType : null,
+        selectedOptions: remortgageOptions,
+        peopleInvolved: remortgagePeople,
       });
    } else if (type === "transfer-of-equity") {
       singleBreakdown = calculateBreakdown("transfer-of-equity", {
         propertyValue: toePropValue,
         isLeasehold: toeLeasehold,
-        leaseholdType: null,
+        leaseholdType: toeLeasehold ? toeLeaseholdType : null,
         selectedOptions: toeOptions,
         peopleInvolved: Math.max(toePeopleAdded + toePeopleRemoved, 1),
       });
@@ -760,9 +768,10 @@ function buildProceedUrl() {
                     propertyValue={remortgagePropValue} setPropertyValue={setRemortgagePropValue}
                     peopleInvolved={remortgagePeople} setPeopleInvolved={setRemortgagePeople}
                     isLeasehold={remortgageLeasehold} setIsLeasehold={setRemortgageLeasehold}
-                    leaseholdType="standard" setLeaseholdType={() => {}}
+                    leaseholdType={remortgageLeaseholdType} setLeaseholdType={setRemortgageLeaseholdType}
                     additionalOptions={remortgageOptions} setAdditionalOptions={setRemortgageOptions}
-                    checkboxOptions={REMORTGAGE_OPTIONS} />
+                    checkboxOptions={REMORTGAGE_OPTIONS}
+                    showLeaseholdFloors />
                 )}
                 {type === "transfer-of-equity" && (
                   <PropertySection title="Transfer of Equity"
@@ -771,9 +780,11 @@ function buildProceedUrl() {
                     propertyValue={toePropValue} setPropertyValue={setToePropValue}
                     peopleInvolved={toePeople} setPeopleInvolved={setToePeople}
                     isLeasehold={toeLeasehold} setIsLeasehold={setToeLeasehold}
-                    leaseholdType="standard" setLeaseholdType={() => {}}
+                    leaseholdType={toeLeaseholdType} setLeaseholdType={setToeLeaseholdType}
                     additionalOptions={toeOptions} setAdditionalOptions={setToeOptions}
-                    checkboxOptions={TRANSFER_OPTIONS} showPeopleAddRemove
+                    checkboxOptions={TRANSFER_OPTIONS}
+                    showLeaseholdFloors
+                    showPeopleAddRemove
                     peopleBeingAdded={toePeopleAdded} setPeopleBeingAdded={setToePeopleAdded}
                     peopleBeingRemoved={toePeopleRemoved} setPeopleBeingRemoved={setToePeopleRemoved} />
                 )}

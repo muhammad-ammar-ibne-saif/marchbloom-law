@@ -480,24 +480,33 @@ export async function sendLeadNotificationEmail(lead: LeadInput): Promise<void> 
   try {
     const resend = new Resend(apiKey);
 
-    await resend.emails.send({
-      from,
-      to: lead.email,
-      replyTo: notificationTo,
-      subject: `Your ${txLabel} conveyancing quote — March & Bloom Law`,
-      html: buildClientEmailHtml(lead),
-    });
+    // Send both emails in parallel — don't wait for one before starting the other
+    await Promise.all([
+      resend.emails.send({
+        from,
+        to: lead.email,
+        replyTo: notificationTo,
+        subject: `Your ${txLabel} conveyancing quote — March & Bloom Law`,
+        html: buildClientEmailHtml(lead),
+      }).then(() => {
+        console.log("[email] Client email sent to:", lead.email);
+      }),
 
-    await resend.emails.send({
-      from,
-      to: notificationTo, 
-      replyTo: lead.email,
-      subject: `New enquiry — ${lead.firstName} ${lead.lastName} (${txLabel})`,
-      html: buildInternalEmailHtml(lead),
-    });
+      resend.emails.send({
+        from,
+        to: notificationTo,
+        replyTo: lead.email,
+        subject: `New enquiry — ${lead.firstName} ${lead.lastName} (${txLabel})`,
+        html: buildInternalEmailHtml(lead),
+      }).then(() => {
+        console.log("[email] Internal email sent to:", notificationTo);
+      }),
+    ]);
 
+    console.log("[email] Both emails sent successfully");
   } catch (err) {
     console.error("[email] Failed to send emails:", err);
+    // Don't rethrow — lead is already saved, email failure shouldn't fail the whole request
   }
 }
 
