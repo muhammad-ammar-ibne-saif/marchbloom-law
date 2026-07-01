@@ -466,47 +466,72 @@ function buildInternalEmailHtml(lead: LeadInput): string {
 }
 
 export async function sendLeadNotificationEmail(lead: LeadInput): Promise<void> {
+  console.log("[email] starting, transaction type:", lead.transactionType);
+
   const apiKey = process.env.RESEND_API_KEY;
   const notificationTo = process.env.LEAD_NOTIFICATION_EMAIL;
   const from = process.env.RESEND_FROM_EMAIL;
 
   if (!apiKey || !notificationTo || !from) {
-    console.warn("[email] Missing env vars — skipping notification email.");
+    console.error("[email] missing env vars:", { apiKey: !!apiKey, notificationTo: !!notificationTo, from: !!from });
     return;
   }
 
   const txLabel = transactionLabels[lead.transactionType] ?? lead.transactionType;
+  console.log("[email] txLabel:", txLabel);
+
+  let clientHtml = "";
+  let internalHtml = "";
 
   try {
-    const resend = new Resend(apiKey);
-
-    // Send both emails in parallel — don't wait for one before starting the other
-    await Promise.all([
-      resend.emails.send({
-        from,
-        to: lead.email,
-        replyTo: notificationTo,
-        subject: `Your ${txLabel} conveyancing quote — March & Bloom Law`,
-        html: buildClientEmailHtml(lead),
-      }).then(() => {
-        console.log("[email] Client email sent to:", lead.email);
-      }),
-
-      resend.emails.send({
-        from,
-        to: notificationTo,
-        replyTo: lead.email,
-        subject: `New enquiry — ${lead.firstName} ${lead.lastName} (${txLabel})`,
-        html: buildInternalEmailHtml(lead),
-      }).then(() => {
-        console.log("[email] Internal email sent to:", notificationTo);
-      }),
-    ]);
-
-    console.log("[email] Both emails sent successfully");
+    console.log("[email] building client HTML");
+    clientHtml = buildClientEmailHtml(lead);
+    console.log("[email] client HTML built, length:", clientHtml.length);
   } catch (err) {
-    console.error("[email] Failed to send emails:", err);
-    // Don't rethrow — lead is already saved, email failure shouldn't fail the whole request
+    console.error("[email] buildClientEmailHtml CRASHED:", err);
+    throw err;
   }
+
+  try {
+    console.log("[email] building internal HTML");
+    internalHtml = buildInternalEmailHtml(lead);
+    console.log("[email] internal HTML built, length:", internalHtml.length);
+  } catch (err) {
+    console.error("[email] buildInternalEmailHtml CRASHED:", err);
+    throw err;
+  }
+
+  const resend = new Resend(apiKey);
+
+  // Send separately so one failure doesn't kill the other
+  try {
+    console.log("[email] sending client email to:", lead.email);
+    const clientResult = await resend.emails.send({
+      from,
+      to: lead.email,
+      replyTo: notificationTo,
+      subject: `Your ${txLabel} conveyancing quote — March & Bloom Law`,
+      html: clientHtml,
+    });
+    console.log("[email] client email result:", JSON.stringify(clientResult));
+  } catch (err) {
+    console.error("[email] client email FAILED:", err);
+  }
+
+  try {
+    console.log("[email] sending internal email to:", notificationTo);
+    const internalResult = await resend.emails.send({
+      from,
+      to: notificationTo,
+      replyTo: lead.email,
+      subject: `New enquiry — ${lead.firstName} ${lead.lastName} (${txLabel})`,
+      html: internalHtml,
+    });
+    console.log("[email] internal email result:", JSON.stringify(internalResult));
+  } catch (err) {
+    console.error("[email] internal email FAILED:", err);
+  }
+
+  console.log("[email] function complete");
 }
 

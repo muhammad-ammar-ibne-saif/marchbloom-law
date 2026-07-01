@@ -100,17 +100,18 @@ export async function POST(request: NextRequest) {
     intent: null,
     message: typeof body.message === "string" ? body.message.slice(0, 2000) : "",
   };
-
-  try {
-    console.log("[api/leads] attempting createLead");
+  
+console.log("[api/leads] attempting createLead");
     const lead = await createLead(leadInput);
     console.log("[api/leads] lead created:", lead._id.toString());
-    console.log("[api/leads] sending email");
-    void sendLeadNotificationEmail(leadInput); 
-    console.log("[api/leads] done");
+
+    try {
+      console.log("[api/leads] calling sendLeadNotificationEmail");
+      await sendLeadNotificationEmail(leadInput);
+      console.log("[api/leads] sendLeadNotificationEmail completed");
+    } catch (emailErr) {
+      console.error("[api/leads] EMAIL FAILED:", emailErr);
+    }
+
     return NextResponse.json({ ok: true, id: lead._id.toString() });
-  } catch (err) {
-    console.error("[api/leads] error:", err);
-    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
-  }
 }
